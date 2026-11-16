@@ -1,0 +1,424 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Core Primitives
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    function incoming() {
+      return request.resource.data;
+    }
+    function existing() {
+      return resource.data;
+    }
+    function isSignedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+    function userExists() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+    function isNumber(val) {
+      return val is int || val is float;
+    }
+
+    // 1. User Validation Helper
+    function isValidUser(data) {
+      return data.keys().hasAll([
+        'uid', 'displayName', 'xp', 'level', 'levelTitle',
+        'lifeScore', 'healthScore', 'focusScore', 'streakDays',
+        'mainDream', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'uid', 'displayName', 'xp', 'level', 'levelTitle',
+        'lifeScore', 'healthScore', 'focusScore', 'streakDays',
+        'mainDream', 'createdAt', 'updatedAt'
+      ]) &&
+      data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 && data.uid == request.auth.uid &&
+      data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 100 &&
+      data.xp is int && data.xp >= 0 && data.xp <= 10000000 &&
+      data.level is int && data.level >= 1 && data.level <= 100 &&
+      data.levelTitle is string && data.levelTitle.size() >= 1 && data.levelTitle.size() <= 60 &&
+      data.lifeScore is int && data.lifeScore >= 0 && data.lifeScore <= 100 &&
+      data.healthScore is int && data.healthScore >= 0 && data.healthScore <= 100 &&
+      data.focusScore is int && data.focusScore >= 0 && data.focusScore <= 100 &&
+      data.streakDays is int && data.streakDays >= 0 && data.streakDays <= 10000 &&
+      data.mainDream is string && data.mainDream.size() >= 1 && data.mainDream.size() <= 200 &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    // 2. Goal Validation Helper
+    function isValidGoal(data) {
+      return data.keys().hasAll([
+        'userId', 'title', 'category', 'targetLabel', 'targetValue',
+        'currentValue', 'progressPct', 'timeline', 'notes', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'userId', 'title', 'category', 'targetLabel', 'targetValue',
+        'currentValue', 'progressPct', 'timeline', 'notes', 'createdAt', 'updatedAt'
+      ]) &&
+      isValidId(data.userId) && data.userId == request.auth.uid &&
+      data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+      data.category is string && data.category.size() <= 20 && data.category in ['House', 'Business', 'Investment', 'Health', 'Family'] &&
+      data.targetLabel is string && data.targetLabel.size() >= 1 && data.targetLabel.size() <= 120 &&
+      isNumber(data.targetValue) && data.targetValue >= 0 && data.targetValue <= 100000000000 &&
+      isNumber(data.currentValue) && data.currentValue >= 0 && data.currentValue <= 100000000000 &&
+      data.progressPct is int && data.progressPct >= 0 && data.progressPct <= 100 &&
+      data.timeline is string && data.timeline.size() >= 1 && data.timeline.size() <= 60 &&
+      data.notes is string && data.notes.size() >= 0 && data.notes.size() <= 500 &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    // 3. Mission Validation Helper
+    function isValidMission(data) {
+      return data.keys().hasAll([
+        'userId', 'title', 'description', 'category', 'status', 'priority',
+        'connectedDream', 'moneyImpact', 'dreamImpact', 'estimatedMinutes',
+        'actualMinutes', 'startTime', 'completionTime', 'notes', 'aiSuggestion',
+        'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'userId', 'title', 'description', 'category', 'status', 'priority',
+        'connectedDream', 'moneyImpact', 'dreamImpact', 'estimatedMinutes',
+        'actualMinutes', 'startTime', 'completionTime', 'notes', 'aiSuggestion',
+        'createdAt', 'updatedAt'
+      ]) &&
+      isValidId(data.userId) && data.userId == request.auth.uid &&
+      data.title is string && data.title.size() >= 1 && data.title.size() <= 140 &&
+      data.description is string && data.description.size() >= 0 && data.description.size() <= 600 &&
+      data.category is string && data.category.size() <= 20 && data.category in ['Business', 'Money', 'Health', 'Family', 'Learning', 'Personal'] &&
+      data.status is string && data.status.size() <= 20 && data.status in ['Not Started', 'Started', 'Processing', 'Paused', 'Cancelled', 'Completed', 'Delayed'] &&
+      data.priority is string && data.priority.size() <= 20 && data.priority in ['Critical', 'High', 'Medium', 'Low'] &&
+      data.connectedDream is string && data.connectedDream.size() >= 1 && data.connectedDream.size() <= 160 &&
+      data.moneyImpact is string && data.moneyImpact.size() <= 10 && data.moneyImpact in ['High', 'Medium', 'Low'] &&
+      data.dreamImpact is int && data.dreamImpact >= 0 && data.dreamImpact <= 100 &&
+      data.estimatedMinutes is int && data.estimatedMinutes >= 1 && data.estimatedMinutes <= 1440 &&
+      data.actualMinutes is int && data.actualMinutes >= 0 && data.actualMinutes <= 1440 &&
+      data.startTime is string && data.startTime.size() >= 0 && data.startTime.size() <= 40 &&
+      data.completionTime is string && data.completionTime.size() >= 0 && data.completionTime.size() <= 40 &&
+      data.notes is string && data.notes.size() >= 0 && data.notes.size() <= 600 &&
+      data.aiSuggestion is string && data.aiSuggestion.size() >= 0 && data.aiSuggestion.size() <= 600 &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    // 4. Habit Validation Helper
+    function isValidHabit(data) {
+      return data.keys().hasAll([
+        'userId', 'dateKey', 'instagramMinutes', 'facebookMinutes',
+        'youtubeMinutes', 'otherSocialMinutes', 'futureBuildingMinutes',
+        'sleepHours', 'workoutMinutes', 'waterGlasses', 'aiTip',
+        'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'userId', 'dateKey', 'instagramMinutes', 'facebookMinutes',
+        'youtubeMinutes', 'otherSocialMinutes', 'futureBuildingMinutes',
+        'sleepHours', 'workoutMinutes', 'waterGlasses', 'aiTip',
+        'createdAt', 'updatedAt'
+      ]) &&
+      isValidId(data.userId) && data.userId == request.auth.uid &&
+      data.dateKey is string && data.dateKey.size() >= 1 && data.dateKey.size() <= 20 &&
+      data.instagramMinutes is int && data.instagramMinutes >= 0 && data.instagramMinutes <= 1440 &&
+      data.facebookMinutes is int && data.facebookMinutes >= 0 && data.facebookMinutes <= 1440 &&
+      data.youtubeMinutes is int && data.youtubeMinutes >= 0 && data.youtubeMinutes <= 1440 &&
+      data.otherSocialMinutes is int && data.otherSocialMinutes >= 0 && data.otherSocialMinutes <= 1440 &&
+      data.futureBuildingMinutes is int && data.futureBuildingMinutes >= 0 && data.futureBuildingMinutes <= 1440 &&
+      data.sleepHours is int && data.sleepHours >= 0 && data.sleepHours <= 24 &&
+      data.workoutMinutes is int && data.workoutMinutes >= 0 && data.workoutMinutes <= 600 &&
+      data.waterGlasses is int && data.waterGlasses >= 0 && data.waterGlasses <= 30 &&
+      data.aiTip is string && data.aiTip.size() >= 0 && data.aiTip.size() <= 500 &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    // 5. Finance Validation Helper
+    function isValidFinance(data) {
+      return data.keys().hasAll([
+        'userId', 'title', 'type', 'category', 'amount',
+        'monthlyTarget', 'notes', 'dateStr', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'userId', 'title', 'type', 'category', 'amount',
+        'monthlyTarget', 'notes', 'dateStr', 'createdAt', 'updatedAt'
+      ]) &&
+      isValidId(data.userId) && data.userId == request.auth.uid &&
+      data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+      data.type is string && data.type.size() <= 20 && data.type in ['Income', 'Expense', 'Loan', 'Investment', 'Saving'] &&
+      data.category is string && data.category.size() >= 1 && data.category.size() <= 80 &&
+      isNumber(data.amount) && data.amount >= 0 && data.amount <= 100000000000 &&
+      isNumber(data.monthlyTarget) && data.monthlyTarget >= 0 && data.monthlyTarget <= 100000000000 &&
+      data.notes is string && data.notes.size() >= 0 && data.notes.size() <= 400 &&
+      data.dateStr is string && data.dateStr.size() >= 1 && data.dateStr.size() <= 30 &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    // 6. DailyReview Validation Helper
+    function isValidDailyReview(data) {
+      return data.keys().hasAll([
+        'userId', 'dateStr', 'completedMissionsCount', 'missedMissionsCount',
+        'moneyCreated', 'focusMinutes', 'distractionMinutes', 'missReason',
+        'reflectionNotes', 'aiSummary', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'userId', 'dateStr', 'completedMissionsCount', 'missedMissionsCount',
+        'moneyCreated', 'focusMinutes', 'distractionMinutes', 'missReason',
+        'reflectionNotes', 'aiSummary', 'createdAt', 'updatedAt'
+      ]) &&
+      isValidId(data.userId) && data.userId == request.auth.uid &&
+      data.dateStr is string && data.dateStr.size() >= 1 && data.dateStr.size() <= 30 &&
+      data.completedMissionsCount is int && data.completedMissionsCount >= 0 && data.completedMissionsCount <= 200 &&
+      data.missedMissionsCount is int && data.missedMissionsCount >= 0 && data.missedMissionsCount <= 200 &&
+      isNumber(data.moneyCreated) && data.moneyCreated >= 0 && data.moneyCreated <= 1000000000 &&
+      data.focusMinutes is int && data.focusMinutes >= 0 && data.focusMinutes <= 1440 &&
+      data.distractionMinutes is int && data.distractionMinutes >= 0 && data.distractionMinutes <= 1440 &&
+      data.missReason is string && data.missReason.size() <= 30 && data.missReason in ['None', 'No time', 'Low energy', 'Distraction', 'Unexpected work'] &&
+      data.reflectionNotes is string && data.reflectionNotes.size() >= 0 && data.reflectionNotes.size() <= 800 &&
+      data.aiSummary is string && data.aiSummary.size() >= 0 && data.aiSummary.size() <= 1500 &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    // 7. Achievement Validation Helper
+    function isValidAchievement(data) {
+      return data.keys().hasAll([
+        'userId', 'code', 'title', 'description', 'xpReward',
+        'category', 'unlockedAtStr', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'userId', 'code', 'title', 'description', 'xpReward',
+        'category', 'unlockedAtStr', 'createdAt', 'updatedAt'
+      ]) &&
+      isValidId(data.userId) && data.userId == request.auth.uid &&
+      data.code is string && data.code.size() >= 1 && data.code.size() <= 80 &&
+      data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+      data.description is string && data.description.size() >= 1 && data.description.size() <= 300 &&
+      data.xpReward is int && data.xpReward >= 0 && data.xpReward <= 100000 &&
+      data.category is string && data.category.size() <= 20 && data.category in ['Focus', 'Business', 'Wealth', 'Health', 'Discipline', 'Milestone'] &&
+      data.unlockedAtStr is string && data.unlockedAtStr.size() >= 1 && data.unlockedAtStr.size() <= 40 &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    // 8. AIChat Validation Helper
+    function isValidAIChat(data) {
+      return data.keys().hasAll([
+        'userId', 'role', 'promptCategory', 'content', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'userId', 'role', 'promptCategory', 'content', 'createdAt', 'updatedAt'
+      ]) &&
+      isValidId(data.userId) && data.userId == request.auth.uid &&
+      data.role is string && data.role.size() <= 15 && data.role in ['user', 'assistant'] &&
+      data.promptCategory is string && data.promptCategory.size() <= 30 && data.promptCategory in ['Daily Focus', 'Income Strategy', 'Motivation', 'Weekly Review', 'General Coaching'] &&
+      data.content is string && data.content.size() >= 1 && data.content.size() <= 4000 &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    // Collection 1: /users/{userId}
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+      allow create: if isSignedIn() && isValidId(userId) && request.auth.uid == userId &&
+        isValidUser(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isSignedIn() && isValidId(userId) && request.auth.uid == userId &&
+        isValidUser(incoming()) &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'displayName', 'xp', 'level', 'levelTitle',
+            'lifeScore', 'healthScore', 'focusScore', 'streakDays',
+            'mainDream', 'updatedAt'
+          ])
+        );
+    }
+
+    // Collection 2: /goals/{goalId}
+    match /goals/{goalId} {
+      allow get: if isSignedIn() && isValidId(goalId) && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && existing().userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(goalId) &&
+        isValidGoal(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        userExists();
+      allow update: if isSignedIn() && isValidId(goalId) &&
+        isValidGoal(incoming()) &&
+        existing().userId == request.auth.uid &&
+        incoming().userId == existing().userId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'title', 'category', 'targetLabel', 'targetValue',
+            'currentValue', 'progressPct', 'timeline', 'notes', 'updatedAt'
+          ])
+        ) &&
+        userExists();
+      allow delete: if isSignedIn() && isValidId(goalId) && existing().userId == request.auth.uid && userExists();
+    }
+
+    // Collection 3: /missions/{missionId}
+    match /missions/{missionId} {
+      allow get: if isSignedIn() && isValidId(missionId) && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && existing().userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(missionId) &&
+        isValidMission(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        userExists();
+      allow update: if isSignedIn() && isValidId(missionId) &&
+        isValidMission(incoming()) &&
+        existing().userId == request.auth.uid &&
+        incoming().userId == existing().userId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        !(existing().status in ['Completed', 'Cancelled']) &&
+        (
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'title', 'description', 'category', 'status', 'priority',
+            'connectedDream', 'moneyImpact', 'dreamImpact', 'estimatedMinutes',
+            'actualMinutes', 'startTime', 'completionTime', 'notes', 'aiSuggestion',
+            'updatedAt'
+          ])
+        ) &&
+        userExists();
+      allow delete: if isSignedIn() && isValidId(missionId) && existing().userId == request.auth.uid && userExists();
+    }
+
+    // Collection 4: /habits/{habitId}
+    match /habits/{habitId} {
+      allow get: if isSignedIn() && isValidId(habitId) && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && existing().userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(habitId) &&
+        isValidHabit(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        userExists();
+      allow update: if isSignedIn() && isValidId(habitId) &&
+        isValidHabit(incoming()) &&
+        existing().userId == request.auth.uid &&
+        incoming().userId == existing().userId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'instagramMinutes', 'facebookMinutes', 'youtubeMinutes',
+            'otherSocialMinutes', 'futureBuildingMinutes', 'sleepHours',
+            'workoutMinutes', 'waterGlasses', 'aiTip', 'updatedAt'
+          ])
+        ) &&
+        userExists();
+      allow delete: if isSignedIn() && isValidId(habitId) && existing().userId == request.auth.uid && userExists();
+    }
+
+    // Collection 5: /finance/{financeId}
+    match /finance/{financeId} {
+      allow get: if isSignedIn() && isValidId(financeId) && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && existing().userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(financeId) &&
+        isValidFinance(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        userExists();
+      allow update: if isSignedIn() && isValidId(financeId) &&
+        isValidFinance(incoming()) &&
+        existing().userId == request.auth.uid &&
+        incoming().userId == existing().userId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'title', 'type', 'category', 'amount',
+            'monthlyTarget', 'notes', 'dateStr', 'updatedAt'
+          ])
+        ) &&
+        userExists();
+      allow delete: if isSignedIn() && isValidId(financeId) && existing().userId == request.auth.uid && userExists();
+    }
+
+    // Collection 6: /dailyReviews/{reviewId}
+    match /dailyReviews/{reviewId} {
+      allow get: if isSignedIn() && isValidId(reviewId) && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && existing().userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(reviewId) &&
+        isValidDailyReview(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        userExists();
+      allow update: if isSignedIn() && isValidId(reviewId) &&
+        isValidDailyReview(incoming()) &&
+        existing().userId == request.auth.uid &&
+        incoming().userId == existing().userId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'completedMissionsCount', 'missedMissionsCount', 'moneyCreated',
+            'focusMinutes', 'distractionMinutes', 'missReason',
+            'reflectionNotes', 'aiSummary', 'updatedAt'
+          ])
+        ) &&
+        userExists();
+      allow delete: if isSignedIn() && isValidId(reviewId) && existing().userId == request.auth.uid && userExists();
+    }
+
+    // Collection 7: /achievements/{achievementId}
+    match /achievements/{achievementId} {
+      allow get: if isSignedIn() && isValidId(achievementId) && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && existing().userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(achievementId) &&
+        isValidAchievement(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        userExists();
+      allow update: if isSignedIn() && isValidId(achievementId) &&
+        isValidAchievement(incoming()) &&
+        existing().userId == request.auth.uid &&
+        incoming().userId == existing().userId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'title', 'description', 'xpReward', 'category', 'unlockedAtStr', 'updatedAt'
+          ])
+        ) &&
+        userExists();
+      allow delete: if isSignedIn() && isValidId(achievementId) && existing().userId == request.auth.uid && userExists();
+    }
+
+    // Collection 8: /aiChats/{chatId}
+    match /aiChats/{chatId} {
+      allow get: if isSignedIn() && isValidId(chatId) && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && existing().userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(chatId) &&
+        isValidAIChat(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        userExists();
+      allow update: if isSignedIn() && isValidId(chatId) &&
+        isValidAIChat(incoming()) &&
+        existing().userId == request.auth.uid &&
+        incoming().userId == existing().userId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'content', 'updatedAt'
+          ])
+        ) &&
+        userExists();
+      allow delete: if isSignedIn() && isValidId(chatId) && existing().userId == request.auth.uid && userExists();
+    }
+  }
+}

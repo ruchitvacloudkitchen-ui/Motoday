@@ -1,0 +1,6 @@
+{
+  "name": "LifeOS - Build Your Future Daily",
+  "description": "An AI-powered personal operating system to manage daily missions, visualize life dreams, build wealth, eliminate distractions, and accelerate personal and business growth.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

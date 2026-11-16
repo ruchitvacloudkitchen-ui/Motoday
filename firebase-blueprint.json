@@ -1,0 +1,192 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile, gamification level, XP, and core life operating scores.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "displayName": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "xp": { "type": "integer", "description": "Total experience points earned" },
+        "level": { "type": "integer", "description": "Current user level from 1 to 100" },
+        "levelTitle": { "type": "string", "minLength": 1, "maxLength": 60 },
+        "lifeScore": { "type": "integer", "description": "Composite life performance score (0-100)" },
+        "healthScore": { "type": "integer", "description": "Composite health score (0-100)" },
+        "focusScore": { "type": "integer", "description": "Composite focus score (0-100)" },
+        "streakDays": { "type": "integer", "description": "Consecutive daily execution streak" },
+        "mainDream": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "displayName", "xp", "level", "levelTitle", "lifeScore", "healthScore", "focusScore", "streakDays", "mainDream", "createdAt", "updatedAt"]
+    },
+    "Goal": {
+      "title": "Goal",
+      "description": "Long-term dream board goal with target valuation, current progress, and timeline.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "category": { "type": "string", "enum": ["House", "Business", "Investment", "Health", "Family"] },
+        "targetLabel": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "targetValue": { "type": "number" },
+        "currentValue": { "type": "number" },
+        "progressPct": { "type": "integer" },
+        "timeline": { "type": "string", "minLength": 1, "maxLength": 60 },
+        "notes": { "type": "string", "minLength": 0, "maxLength": 500 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "category", "targetLabel", "targetValue", "currentValue", "progressPct", "timeline", "notes", "createdAt", "updatedAt"]
+    },
+    "Mission": {
+      "title": "Mission",
+      "description": "Actionable daily mission linked to a life dream with money impact, dream impact, and time tracking.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 140 },
+        "description": { "type": "string", "minLength": 0, "maxLength": 600 },
+        "category": { "type": "string", "enum": ["Business", "Money", "Health", "Family", "Learning", "Personal"] },
+        "status": { "type": "string", "enum": ["Not Started", "Started", "Processing", "Paused", "Cancelled", "Completed", "Delayed"] },
+        "priority": { "type": "string", "enum": ["Critical", "High", "Medium", "Low"] },
+        "connectedDream": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "moneyImpact": { "type": "string", "enum": ["High", "Medium", "Low"] },
+        "dreamImpact": { "type": "integer" },
+        "estimatedMinutes": { "type": "integer" },
+        "actualMinutes": { "type": "integer" },
+        "startTime": { "type": "string", "minLength": 0, "maxLength": 40 },
+        "completionTime": { "type": "string", "minLength": 0, "maxLength": 40 },
+        "notes": { "type": "string", "minLength": 0, "maxLength": 600 },
+        "aiSuggestion": { "type": "string", "minLength": 0, "maxLength": 600 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "description", "category", "status", "priority", "connectedDream", "moneyImpact", "dreamImpact", "estimatedMinutes", "actualMinutes", "startTime", "completionTime", "notes", "aiSuggestion", "createdAt", "updatedAt"]
+    },
+    "Habit": {
+      "title": "Habit",
+      "description": "Daily habit and social media distraction log comparing entertainment time with future building time.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "dateKey": { "type": "string", "minLength": 1, "maxLength": 20 },
+        "instagramMinutes": { "type": "integer" },
+        "facebookMinutes": { "type": "integer" },
+        "youtubeMinutes": { "type": "integer" },
+        "otherSocialMinutes": { "type": "integer" },
+        "futureBuildingMinutes": { "type": "integer" },
+        "sleepHours": { "type": "integer" },
+        "workoutMinutes": { "type": "integer" },
+        "waterGlasses": { "type": "integer" },
+        "aiTip": { "type": "string", "minLength": 0, "maxLength": 500 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "dateKey", "instagramMinutes", "facebookMinutes", "youtubeMinutes", "otherSocialMinutes", "futureBuildingMinutes", "sleepHours", "workoutMinutes", "waterGlasses", "aiTip", "createdAt", "updatedAt"]
+    },
+    "Finance": {
+      "title": "Finance",
+      "description": "Financial ledger entry tracking income, expenses, loans, investments, and savings.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "type": { "type": "string", "enum": ["Income", "Expense", "Loan", "Investment", "Saving"] },
+        "category": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "amount": { "type": "number" },
+        "monthlyTarget": { "type": "number" },
+        "notes": { "type": "string", "minLength": 0, "maxLength": 400 },
+        "dateStr": { "type": "string", "minLength": 1, "maxLength": 30 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "type", "category", "amount", "monthlyTarget", "notes", "dateStr", "createdAt", "updatedAt"]
+    },
+    "DailyReview": {
+      "title": "DailyReview",
+      "description": "Nightly executive accountability report tracking completed vs missed missions and root causes.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "dateStr": { "type": "string", "minLength": 1, "maxLength": 30 },
+        "completedMissionsCount": { "type": "integer" },
+        "missedMissionsCount": { "type": "integer" },
+        "moneyCreated": { "type": "number" },
+        "focusMinutes": { "type": "integer" },
+        "distractionMinutes": { "type": "integer" },
+        "missReason": { "type": "string", "enum": ["None", "No time", "Low energy", "Distraction", "Unexpected work"] },
+        "reflectionNotes": { "type": "string", "minLength": 0, "maxLength": 800 },
+        "aiSummary": { "type": "string", "minLength": 0, "maxLength": 1500 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "dateStr", "completedMissionsCount", "missedMissionsCount", "moneyCreated", "focusMinutes", "distractionMinutes", "missReason", "reflectionNotes", "aiSummary", "createdAt", "updatedAt"]
+    },
+    "Achievement": {
+      "title": "Achievement",
+      "description": "Unlocked gamification milestone and XP reward.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "code": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "description": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "xpReward": { "type": "integer" },
+        "category": { "type": "string", "enum": ["Focus", "Business", "Wealth", "Health", "Discipline", "Milestone"] },
+        "unlockedAtStr": { "type": "string", "minLength": 1, "maxLength": 40 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "code", "title", "description", "xpReward", "category", "unlockedAtStr", "createdAt", "updatedAt"]
+    },
+    "AIChat": {
+      "title": "AIChat",
+      "description": "Message in the AI Life Coach and CEO advisor stream.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "role": { "type": "string", "enum": ["user", "assistant"] },
+        "promptCategory": { "type": "string", "enum": ["Daily Focus", "Income Strategy", "Motivation", "Weekly Review", "General Coaching"] },
+        "content": { "type": "string", "minLength": 1, "maxLength": 4000 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "role", "promptCategory", "content", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Stores user profile, XP, level, and composite scores."
+    },
+    "/goals/{goalId}": {
+      "schema": { "$ref": "#/entities/Goal" },
+      "description": "Stores visual Dream Board goals."
+    },
+    "/missions/{missionId}": {
+      "schema": { "$ref": "#/entities/Mission" },
+      "description": "Stores daily missions connected to life dreams."
+    },
+    "/habits/{habitId}": {
+      "schema": { "$ref": "#/entities/Habit" },
+      "description": "Stores social media control and daily habit logs."
+    },
+    "/finance/{financeId}": {
+      "schema": { "$ref": "#/entities/Finance" },
+      "description": "Stores personal finance entries for income, expenses, loans, investments, and savings."
+    },
+    "/dailyReviews/{reviewId}": {
+      "schema": { "$ref": "#/entities/DailyReview" },
+      "description": "Stores nightly accountability reviews and root causes for missed missions."
+    },
+    "/achievements/{achievementId}": {
+      "schema": { "$ref": "#/entities/Achievement" },
+      "description": "Stores unlocked gamification achievements."
+    },
+    "/aiChats/{chatId}": {
+      "schema": { "$ref": "#/entities/AIChat" },
+      "description": "Stores AI Life Coach conversation history."
+    }
+  }
+}
