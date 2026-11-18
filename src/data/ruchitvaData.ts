@@ -1,7 +1,8 @@
 export type DayPlanType = 'weekday' | 'saturday' | 'sunday';
+export type DayMode = DayPlanType;
 export type TaskState = 'not_started' | 'processing' | 'completed' | 'cancelled';
+export type TaskStatus = TaskState;
 export type TimeThemeMode = 'morning' | 'evening' | 'night';
-export type IllustrationPropType = 'coin' | 'phone' | 'cake';
 
 export interface DailyTask {
   id: string;
@@ -9,14 +10,11 @@ export interface DailyTask {
   time: string;
   startMins: number;
   icon: string;
-  emoji?: string;
   title: string;
-  posterHeadline: string;
   benefit: string;
-  propType: IllustrationPropType;
-  cardBg: string;
+  pastelTone: 'peach' | 'mint' | 'lavender' | 'sky';
+  illustrationVariant: 'calm' | 'sun' | 'moon' | 'coin' | 'sprout';
   status: TaskState;
-  startedAtMs?: number;
   startedAt?: number;
   minutesTaken?: number;
   rescheduledTo?: string;
@@ -27,61 +25,273 @@ export interface DreamCardItem {
   emoji: string;
   title: string;
   daysLeft: number;
-  progressPct: number;
-  progress?: number;
-  achieved: boolean;
-  tapCount: number;
+  pastelClass: string;
   imageUrl: string;
-  affirmation: string;
 }
 
-export interface LoanMountainItem {
-  id: string;
-  name: string;
-  totalAmount: number;
-  remainingAmount: number;
-  stepPayAmount: number;
-  emoji: string;
-}
-
-export interface WeeklyFinanceEntry {
-  branch1Sales: number;
-  branch2Sales: number;
-  costs: number;
-  loanPaid: number;
+export interface MoneyStateData {
+  loansLeft: number;
   saved: number;
+  profit: number;
+  ordersToday?: number;
+  ordersWeek?: number;
+  ordersMonth?: number;
+  weeklyBars: { day: string; pct: number; color: string }[];
 }
 
-export interface BadgeItem {
-  id: string;
-  emoji: string;
-  title: string;
-  unlocked: boolean;
+export interface MonthlyOrderPlan {
+  monthName: string;
+  dailyTarget: number;
+  weeklyTarget: number;
+  monthlyTarget: number;
+  monthlySaveTarget: number;
+  monthlySaveLabel: string;
 }
 
+export function getMonthlyOrderPlan(date: Date = new Date()): MonthlyOrderPlan {
+  const m = date.getMonth(); // 0 = Jan, 1 = Feb, ..., 11 = Dec
+  switch (m) {
+    case 0:
+      return {
+        monthName: 'Jan',
+        dailyTarget: 35,
+        weeklyTarget: 210,
+        monthlyTarget: 910,
+        monthlySaveTarget: 30000,
+        monthlySaveLabel: 'save 30k',
+      };
+    case 1:
+      return {
+        monthName: 'Feb',
+        dailyTarget: 45,
+        weeklyTarget: 270,
+        monthlyTarget: 1170,
+        monthlySaveTarget: 51000,
+        monthlySaveLabel: 'save 51k',
+      };
+    case 2:
+      return {
+        monthName: 'Mar',
+        dailyTarget: 55,
+        weeklyTarget: 330,
+        monthlyTarget: 1430,
+        monthlySaveTarget: 72000,
+        monthlySaveLabel: 'save 72k',
+      };
+    case 3:
+      return {
+        monthName: 'Apr',
+        dailyTarget: 65,
+        weeklyTarget: 390,
+        monthlyTarget: 1690,
+        monthlySaveTarget: 94000,
+        monthlySaveLabel: 'save 94k',
+      };
+    case 4:
+      return {
+        monthName: 'May',
+        dailyTarget: 75,
+        weeklyTarget: 450,
+        monthlyTarget: 1950,
+        monthlySaveTarget: 115000,
+        monthlySaveLabel: 'save 1.15L',
+      };
+    case 5:
+      return {
+        monthName: 'Jun',
+        dailyTarget: 85,
+        weeklyTarget: 510,
+        monthlyTarget: 2210,
+        monthlySaveTarget: 136000,
+        monthlySaveLabel: 'save 1.36L',
+      };
+    default:
+      // Dec (and Nov leading into Dec)
+      return {
+        monthName: 'Dec',
+        dailyTarget: 25,
+        weeklyTarget: 150,
+        monthlyTarget: 650,
+        monthlySaveTarget: 8000,
+        monthlySaveLabel: 'save 8k',
+      };
+  }
+}
+
+export function getDaysLeftToJune2027(now: Date = new Date()): number {
+  const target = new Date('2027-06-30T23:59:59');
+  const diffMs = target.getTime() - now.getTime();
+  return Math.max(0, Math.ceil(diffMs / 86400000));
+}
+
+// Morning: 5 am to 5 pm, Evening: 5 pm to 8 pm, Night: 8 pm to 5 am
 export function getThemeByHour(hour: number): TimeThemeMode {
   if (hour >= 5 && hour < 17) return 'morning';
   if (hour >= 17 && hour < 20) return 'evening';
   return 'night';
 }
 
-export const DAILY_MANIFESTATIONS: string[] = [
-  'I AM ATTRACTING 6 BRANCHES!',
-  'MY LOANS MELT AWAY FAST!',
-  'CUSTOMERS LOVE RUCHITVA DAILY!',
-  'WE OWN OUR DREAM HOME!',
-  'GOLD AND WEALTH FLOW IN!',
-  'MY FILM SHINES ON SCREEN!',
+export interface ManifestationCardItem {
+  id: string;
+  category: 'Business' | 'Money' | 'Home and family' | 'Dreams' | 'Self';
+  line: string;
+  symbol: 'sun' | 'star' | 'lotus';
+}
+
+export const MANIFESTATION_CARDS: ManifestationCardItem[] = [
+  // Business
+  {
+    id: 'm_1',
+    category: 'Business',
+    line: 'Ruchitva grows every single day.',
+    symbol: 'sun',
+  },
+  {
+    id: 'm_2',
+    category: 'Business',
+    line: 'Branch 2 is full of happy customers.',
+    symbol: 'star',
+  },
+  {
+    id: 'm_3',
+    category: 'Business',
+    line: 'I open Ruchitva branch after branch.',
+    symbol: 'lotus',
+  },
+  {
+    id: 'm_4',
+    category: 'Business',
+    line: 'Ruchitva reaches 6 branches.',
+    symbol: 'sun',
+  },
+  {
+    id: 'm_5',
+    category: 'Business',
+    line: 'Customers love my food and return.',
+    symbol: 'lotus',
+  },
+  {
+    id: 'm_6',
+    category: 'Business',
+    line: 'My team works with pride and joy.',
+    symbol: 'star',
+  },
+  // Money
+  {
+    id: 'm_7',
+    category: 'Money',
+    line: 'Money flows to me easily.',
+    symbol: 'sun',
+  },
+  {
+    id: 'm_8',
+    category: 'Money',
+    line: 'I am free from every loan.',
+    symbol: 'lotus',
+  },
+  {
+    id: 'm_9',
+    category: 'Money',
+    line: 'My savings grow every month.',
+    symbol: 'star',
+  },
+  {
+    id: 'm_10',
+    category: 'Money',
+    line: 'I make smart money decisions.',
+    symbol: 'sun',
+  },
+  {
+    id: 'm_11',
+    category: 'Money',
+    line: 'I am becoming wealthy and free.',
+    symbol: 'star',
+  },
+  // Home and family
+  {
+    id: 'm_12',
+    category: 'Home and family',
+    line: 'I own my beautiful home.',
+    symbol: 'lotus',
+  },
+  {
+    id: 'm_13',
+    category: 'Home and family',
+    line: 'My family is safe and happy.',
+    symbol: 'sun',
+  },
+  {
+    id: 'm_14',
+    category: 'Home and family',
+    line: 'I give my son a great future.',
+    symbol: 'star',
+  },
+  // Dreams
+  {
+    id: 'm_15',
+    category: 'Dreams',
+    line: 'I drive my dream car.',
+    symbol: 'star',
+  },
+  {
+    id: 'm_16',
+    category: 'Dreams',
+    line: 'I travel the world with my family.',
+    symbol: 'sun',
+  },
+  {
+    id: 'm_17',
+    category: 'Dreams',
+    line: 'My own film is shining on screen.',
+    symbol: 'star',
+  },
+  {
+    id: 'm_18',
+    category: 'Dreams',
+    line: 'My second brand is a big success.',
+    symbol: 'lotus',
+  },
+  // Self
+  {
+    id: 'm_19',
+    category: 'Self',
+    line: 'I am disciplined, strong and focused.',
+    symbol: 'sun',
+  },
+  {
+    id: 'm_20',
+    category: 'Self',
+    line: 'Every day I move closer to my goals.',
+    symbol: 'star',
+  },
+  {
+    id: 'm_21',
+    category: 'Self',
+    line: 'I choose focus over distraction.',
+    symbol: 'lotus',
+  },
+  {
+    id: 'm_22',
+    category: 'Self',
+    line: 'I am grateful for everything I have.',
+    symbol: 'lotus',
+  },
+  {
+    id: 'm_23',
+    category: 'Self',
+    line: 'I am already receiving this.',
+    symbol: 'sun',
+  },
 ];
 
-export const LUCKY_QUOTES: string[] = [
-  'Small daily wins build a big empire.',
-  'Zero reels today equals more profit tomorrow.',
-  'Your calm focus attracts royal wealth.',
-  'Every loan payment buys your freedom.',
-  'Srinivas rises brighter like the sun.',
+export const FOCUS_QUOTES: string[] = [
+  'Calm focus builds your empire.',
+  'One quiet step at a time.',
+  'Breathe deeply and stay present.',
+  'Peaceful mind creates lasting wealth.',
 ];
 
+// Max 12 words per money quote from famous advisors
 export const MONEY_QUOTES: { quote: string; author: string }[] = [
   {
     quote: 'Do not save what is left after spending.',
@@ -92,14 +302,6 @@ export const MONEY_QUOTES: { quote: string; author: string }[] = [
     author: 'Charlie Munger',
   },
   {
-    quote: 'Live like no one else now, win later.',
-    author: 'Dave Ramsey',
-  },
-  {
-    quote: 'An investment in knowledge pays best interest.',
-    author: 'Benjamin Franklin',
-  },
-  {
     quote: 'Wealth is what you do not spend.',
     author: 'Morgan Housel',
   },
@@ -107,14 +309,10 @@ export const MONEY_QUOTES: { quote: string; author: string }[] = [
     quote: 'Stay the course and let time compound.',
     author: 'John Bogle',
   },
-  {
-    quote: 'Know what you own and why you own it.',
-    author: 'Peter Lynch',
-  },
 ];
 
 export const INITIAL_TASKS: DailyTask[] = [
-  // WEEKDAY (13 tasks with ALL-CAPS poster headlines & 5-word benefits)
+  // WEEKDAY (13 tasks with exact titles & 5-word benefits)
   {
     id: 'wd_1',
     dayType: 'weekday',
@@ -122,10 +320,9 @@ export const INITIAL_TASKS: DailyTask[] = [
     startMins: 5 * 60 + 30,
     icon: '🪥',
     title: 'Brush and shave',
-    posterHeadline: 'RISE AND SHINE!',
     benefit: 'Fresh start, sharp mind',
-    propType: 'coin',
-    cardBg: '#38BDF8',
+    pastelTone: 'peach',
+    illustrationVariant: 'sun',
     status: 'completed',
     minutesTaken: 15,
   },
@@ -136,10 +333,9 @@ export const INITIAL_TASKS: DailyTask[] = [
     startMins: 6 * 60,
     icon: '🚶',
     title: 'Walk',
-    posterHeadline: 'STEP INTO POWER!',
     benefit: 'Energy for the whole day',
-    propType: 'coin',
-    cardBg: '#FB7185',
+    pastelTone: 'mint',
+    illustrationVariant: 'sprout',
     status: 'completed',
     minutesTaken: 25,
   },
@@ -150,12 +346,11 @@ export const INITIAL_TASKS: DailyTask[] = [
     startMins: 6 * 60 + 30,
     icon: '💪',
     title: 'Gym',
-    posterHeadline: 'SWEAT NOW, SHINE LATER!',
     benefit: 'Strong body, strong business',
-    propType: 'coin',
-    cardBg: '#FACC15',
+    pastelTone: 'lavender',
+    illustrationVariant: 'calm',
     status: 'completed',
-    minutesTaken: 45,
+    minutesTaken: 40,
   },
   {
     id: 'wd_4',
@@ -164,10 +359,9 @@ export const INITIAL_TASKS: DailyTask[] = [
     startMins: 7 * 60 + 30,
     icon: '🚿',
     title: 'Bath and breakfast',
-    posterHeadline: 'FRESH AND READY!',
     benefit: 'Clean body, calm mind',
-    propType: 'cake',
-    cardBg: '#38BDF8',
+    pastelTone: 'sky',
+    illustrationVariant: 'sun',
     status: 'not_started',
   },
   {
@@ -177,10 +371,9 @@ export const INITIAL_TASKS: DailyTask[] = [
     startMins: 8 * 60,
     icon: '👨‍👩‍👧',
     title: 'Family time',
-    posterHeadline: 'LOVE FUELS EMPIRE!',
     benefit: 'Love gives you strength',
-    propType: 'cake',
-    cardBg: '#FB7185',
+    pastelTone: 'peach',
+    illustrationVariant: 'calm',
     status: 'not_started',
   },
   {
@@ -189,11 +382,10 @@ export const INITIAL_TASKS: DailyTask[] = [
     time: '8:30 AM',
     startMins: 8 * 60 + 30,
     icon: '🚌',
-    title: 'Bus plan (1-3-5)',
-    posterHeadline: 'WIN THE DAY EARLY!',
+    title: 'Bus plan',
     benefit: 'Clear plan saves hours',
-    propType: 'phone',
-    cardBg: '#FACC15',
+    pastelTone: 'mint',
+    illustrationVariant: 'sprout',
     status: 'not_started',
   },
   {
@@ -202,11 +394,10 @@ export const INITIAL_TASKS: DailyTask[] = [
     time: '10:00 AM',
     startMins: 10 * 60,
     icon: '💬',
-    title: 'Bus customer replies',
-    posterHeadline: 'HAPPY CUSTOMERS PAY!',
+    title: 'Customer replies',
     benefit: 'Happy customers bring repeat orders',
-    propType: 'phone',
-    cardBg: '#38BDF8',
+    pastelTone: 'lavender',
+    illustrationVariant: 'coin',
     status: 'not_started',
   },
   {
@@ -215,11 +406,10 @@ export const INITIAL_TASKS: DailyTask[] = [
     time: '1:00 PM',
     startMins: 13 * 60,
     icon: '🍱',
-    title: 'Lunch check orders',
-    posterHeadline: 'RUCHITVA BOSS CHECK!',
+    title: 'Lunch, check orders',
     benefit: 'Catch problems before they grow',
-    propType: 'cake',
-    cardBg: '#FB7185',
+    pastelTone: 'peach',
+    illustrationVariant: 'sun',
     status: 'not_started',
   },
   {
@@ -228,11 +418,10 @@ export const INITIAL_TASKS: DailyTask[] = [
     time: '5:30 PM',
     startMins: 17 * 60 + 30,
     icon: '🚫',
-    title: 'Bus back no reels',
-    posterHeadline: 'PHONE DOWN, MONEY UP!',
+    title: 'Bus back, no reels',
     benefit: 'Protect your focus and time',
-    propType: 'phone',
-    cardBg: '#FACC15',
+    pastelTone: 'sky',
+    illustrationVariant: 'calm',
     status: 'not_started',
   },
   {
@@ -241,11 +430,10 @@ export const INITIAL_TASKS: DailyTask[] = [
     time: '8:15 PM',
     startMins: 20 * 60 + 15,
     icon: '📊',
-    title: "Write today's numbers",
-    posterHeadline: 'COUNT YOUR COINS!',
+    title: 'Write numbers',
     benefit: 'Numbers show the real picture',
-    propType: 'coin',
-    cardBg: '#38BDF8',
+    pastelTone: 'mint',
+    illustrationVariant: 'coin',
     status: 'not_started',
   },
   {
@@ -255,10 +443,9 @@ export const INITIAL_TASKS: DailyTask[] = [
     startMins: 21 * 60 + 15,
     icon: '🍽️',
     title: 'Dinner with family',
-    posterHeadline: 'FAMILY IS REAL WEALTH!',
     benefit: 'Family is your real wealth',
-    propType: 'cake',
-    cardBg: '#FB7185',
+    pastelTone: 'peach',
+    illustrationVariant: 'calm',
     status: 'not_started',
   },
   {
@@ -268,10 +455,9 @@ export const INITIAL_TASKS: DailyTask[] = [
     startMins: 22 * 60,
     icon: '📵',
     title: 'Phone away',
-    posterHeadline: 'GOODBYE SCREEN TIME!',
     benefit: 'Calm mind sleeps deeper',
-    propType: 'phone',
-    cardBg: '#FACC15',
+    pastelTone: 'lavender',
+    illustrationVariant: 'moon',
     status: 'not_started',
   },
   {
@@ -281,14 +467,13 @@ export const INITIAL_TASKS: DailyTask[] = [
     startMins: 22 * 60 + 30,
     icon: '😴',
     title: 'Sleep',
-    posterHeadline: 'SLEEP LIKE A KING!',
     benefit: "Rest builds tomorrow's success",
-    propType: 'coin',
-    cardBg: '#38BDF8',
+    pastelTone: 'sky',
+    illustrationVariant: 'moon',
     status: 'not_started',
   },
 
-  // SATURDAY
+  // SATURDAY (Shutter work & kitchen expansion)
   {
     id: 'sat_1',
     dayType: 'saturday',
@@ -296,12 +481,11 @@ export const INITIAL_TASKS: DailyTask[] = [
     startMins: 6 * 60,
     icon: '💪',
     title: 'Walk and gym',
-    posterHeadline: 'SWEAT NOW, SHINE LATER!',
     benefit: 'Strong body builds strong empire',
-    propType: 'coin',
-    cardBg: '#FACC15',
+    pastelTone: 'mint',
+    illustrationVariant: 'sun',
     status: 'completed',
-    minutesTaken: 45,
+    minutesTaken: 40,
   },
   {
     id: 'sat_2',
@@ -310,10 +494,9 @@ export const INITIAL_TASKS: DailyTask[] = [
     startMins: 8 * 60,
     icon: '👨‍👩‍👧',
     title: 'Family breakfast',
-    posterHeadline: 'MORNING SMILES WIN!',
     benefit: 'Morning smiles start great weekends',
-    propType: 'cake',
-    cardBg: '#FB7185',
+    pastelTone: 'peach',
+    illustrationVariant: 'calm',
     status: 'completed',
     minutesTaken: 30,
   },
@@ -324,10 +507,9 @@ export const INITIAL_TASKS: DailyTask[] = [
     startMins: 9 * 60 + 30,
     icon: '🏪',
     title: 'Shutter work',
-    posterHeadline: 'OPEN MORE BRANCHES!',
     benefit: 'New branches grow your wealth',
-    propType: 'coin',
-    cardBg: '#38BDF8',
+    pastelTone: 'lavender',
+    illustrationVariant: 'coin',
     status: 'not_started',
   },
   {
@@ -337,10 +519,9 @@ export const INITIAL_TASKS: DailyTask[] = [
     startMins: 12 * 60 + 30,
     icon: '🍲',
     title: 'Kitchen quality check',
-    posterHeadline: 'TASTE IS KING!',
     benefit: 'Great taste wins loyal customers',
-    propType: 'cake',
-    cardBg: '#FACC15',
+    pastelTone: 'sky',
+    illustrationVariant: 'sprout',
     status: 'not_started',
   },
   {
@@ -349,54 +530,26 @@ export const INITIAL_TASKS: DailyTask[] = [
     time: '4:00 PM',
     startMins: 16 * 60,
     icon: '📦',
-    title: 'Stock and vendors',
-    posterHeadline: 'SMART BUY, BIG PROFIT!',
+    title: 'Vendor stock check',
     benefit: 'Smart buying increases weekly profit',
-    propType: 'coin',
-    cardBg: '#FB7185',
+    pastelTone: 'mint',
+    illustrationVariant: 'coin',
     status: 'not_started',
   },
   {
     id: 'sat_6',
     dayType: 'saturday',
-    time: '7:30 PM',
-    startMins: 19 * 60 + 30,
-    icon: '🚀',
-    title: 'Next branch plan',
-    posterHeadline: 'SIX BRANCH EMPIRE!',
-    benefit: 'Big vision creates six branches',
-    propType: 'phone',
-    cardBg: '#38BDF8',
-    status: 'not_started',
-  },
-  {
-    id: 'sat_7',
-    dayType: 'saturday',
-    time: '9:15 PM',
-    startMins: 21 * 60 + 15,
+    time: '9:00 PM',
+    startMins: 21 * 60,
     icon: '🍽️',
     title: 'Dinner with family',
-    posterHeadline: 'FAMILY IS REAL WEALTH!',
     benefit: 'Family is your real wealth',
-    propType: 'cake',
-    cardBg: '#FB7185',
-    status: 'not_started',
-  },
-  {
-    id: 'sat_8',
-    dayType: 'saturday',
-    time: '10:00 PM',
-    startMins: 22 * 60,
-    icon: '📵',
-    title: 'Phone away',
-    posterHeadline: 'PHONE DOWN, MONEY UP!',
-    benefit: 'Calm mind sleeps deeper',
-    propType: 'phone',
-    cardBg: '#FACC15',
+    pastelTone: 'peach',
+    illustrationVariant: 'moon',
     status: 'not_started',
   },
 
-  // SUNDAY
+  // SUNDAY (Rest, family, weekly review)
   {
     id: 'sun_1',
     dayType: 'sunday',
@@ -404,12 +557,11 @@ export const INITIAL_TASKS: DailyTask[] = [
     startMins: 7 * 60,
     icon: '🌅',
     title: 'Slow morning walk',
-    posterHeadline: 'RISE AND SHINE!',
     benefit: 'Peaceful mornings recharge your soul',
-    propType: 'coin',
-    cardBg: '#38BDF8',
+    pastelTone: 'mint',
+    illustrationVariant: 'sun',
     status: 'completed',
-    minutesTaken: 40,
+    minutesTaken: 35,
   },
   {
     id: 'sun_2',
@@ -418,10 +570,9 @@ export const INITIAL_TASKS: DailyTask[] = [
     startMins: 9 * 60 + 30,
     icon: '👨‍👩‍👧',
     title: 'Family fun time',
-    posterHeadline: 'HAPPY HOME WINS!',
     benefit: 'Happy home fuels every dream',
-    propType: 'cake',
-    cardBg: '#FB7185',
+    pastelTone: 'peach',
+    illustrationVariant: 'calm',
     status: 'not_started',
   },
   {
@@ -431,10 +582,9 @@ export const INITIAL_TASKS: DailyTask[] = [
     startMins: 13 * 60,
     icon: '🍛',
     title: 'Special family lunch',
-    posterHeadline: 'SUNDAY ROYAL FEAST!',
     benefit: 'Good food brings hearts together',
-    propType: 'cake',
-    cardBg: '#FACC15',
+    pastelTone: 'lavender',
+    illustrationVariant: 'sprout',
     status: 'not_started',
   },
   {
@@ -444,250 +594,24 @@ export const INITIAL_TASKS: DailyTask[] = [
     startMins: 17 * 60,
     icon: '📈',
     title: 'Weekly review',
-    posterHeadline: 'COUNT YOUR COINS!',
     benefit: 'Weekly review makes next week',
-    propType: 'coin',
-    cardBg: '#38BDF8',
+    pastelTone: 'sky',
+    illustrationVariant: 'coin',
     status: 'not_started',
   },
   {
     id: 'sun_5',
     dayType: 'sunday',
-    time: '7:30 PM',
-    startMins: 19 * 60 + 30,
-    icon: '🎬',
-    title: 'Film and rest',
-    posterHeadline: 'CINEMA DREAM ALIVE!',
-    benefit: 'Great stories inspire your film',
-    propType: 'phone',
-    cardBg: '#FB7185',
-    status: 'not_started',
-  },
-  {
-    id: 'sun_6',
-    dayType: 'sunday',
     time: '9:30 PM',
     startMins: 21 * 60 + 30,
-    icon: '🙏',
-    title: 'Gratitude time',
-    posterHeadline: 'COUNT YOUR BLESSINGS!',
-    benefit: 'Grateful hearts attract more blessings',
-    propType: 'coin',
-    cardBg: '#FACC15',
-    status: 'not_started',
-  },
-  {
-    id: 'sun_7',
-    dayType: 'sunday',
-    time: '10:00 PM',
-    startMins: 22 * 60,
-    icon: '📵',
-    title: 'Phone away',
-    posterHeadline: 'PHONE DOWN, MONEY UP!',
-    benefit: 'Calm mind sleeps deeper',
-    propType: 'phone',
-    cardBg: '#38BDF8',
+    icon: '😴',
+    title: 'Early rest',
+    benefit: "Rest builds tomorrow's success",
+    pastelTone: 'lavender',
+    illustrationVariant: 'moon',
     status: 'not_started',
   },
 ];
-
-export const INITIAL_DREAMS: DreamCardItem[] = [
-  {
-    id: 'dream_branches',
-    emoji: '🏪',
-    title: '6 Branches',
-    daysLeft: 240,
-    progressPct: 35,
-    achieved: false,
-    tapCount: 4,
-    imageUrl: '/src/assets/images/dream_cloud_kitchen_1794797321463.jpg',
-    affirmation: '6 Ruchitva branches are thriving!',
-  },
-  {
-    id: 'dream_loans',
-    emoji: '💳',
-    title: 'Loan Free',
-    daysLeft: 180,
-    progressPct: 55,
-    achieved: false,
-    tapCount: 5,
-    imageUrl: '/src/assets/images/dream_wealth_portfolio_1794797321389.jpg',
-    affirmation: 'I am 100% debt free!',
-  },
-  {
-    id: 'dream_home',
-    emoji: '🏠',
-    title: 'Home or Plot',
-    daysLeft: 365,
-    progressPct: 60,
-    achieved: false,
-    tapCount: 6,
-    imageUrl: '/src/assets/images/dream_luxury_house_1794797319148.jpg',
-    affirmation: 'We own our family home!',
-  },
-  {
-    id: 'dream_car',
-    emoji: '🚗',
-    title: 'Dream Car',
-    daysLeft: 300,
-    progressPct: 45,
-    achieved: false,
-    tapCount: 3,
-    imageUrl: '',
-    affirmation: 'We drive our new car!',
-  },
-  {
-    id: 'dream_gold',
-    emoji: '🪙',
-    title: 'Gold',
-    daysLeft: 120,
-    progressPct: 70,
-    achieved: false,
-    tapCount: 7,
-    imageUrl: '',
-    affirmation: 'Gold blesses our happy home!',
-  },
-  {
-    id: 'dream_trip',
-    emoji: '✈️',
-    title: 'Foreign Trip',
-    daysLeft: 420,
-    progressPct: 30,
-    achieved: false,
-    tapCount: 2,
-    imageUrl: '',
-    affirmation: 'We travel the world happily!',
-  },
-  {
-    id: 'dream_film',
-    emoji: '🎬',
-    title: 'My Film',
-    daysLeft: 500,
-    progressPct: 25,
-    achieved: false,
-    tapCount: 5,
-    imageUrl: '',
-    affirmation: 'My film shines on screen!',
-  },
-];
-
-export const INITIAL_LOANS: LoanMountainItem[] = [
-  {
-    id: 'loan_moneyview',
-    name: 'MoneyView',
-    totalAmount: 200000,
-    remainingAmount: 95000,
-    stepPayAmount: 10000,
-    emoji: '🏔️',
-  },
-  {
-    id: 'loan_lt',
-    name: 'L&T',
-    totalAmount: 180000,
-    remainingAmount: 80000,
-    stepPayAmount: 10000,
-    emoji: '⛰️',
-  },
-  {
-    id: 'loan_personal',
-    name: 'Personal',
-    totalAmount: 250000,
-    remainingAmount: 110000,
-    stepPayAmount: 15000,
-    emoji: '🗻',
-  },
-  {
-    id: 'loan_chit',
-    name: 'Chit',
-    totalAmount: 300000,
-    remainingAmount: 120000,
-    stepPayAmount: 15000,
-    emoji: '🌋',
-  },
-];
-
-export const INITIAL_BADGES: BadgeItem[] = [
-  { id: 'b_sunrise', emoji: '🌅', title: '5:30 Hero', unlocked: true },
-  { id: 'b_noreels', emoji: '🚫', title: 'No Reels', unlocked: true },
-  { id: 'b_kitchen', emoji: '🍱', title: 'Chef King', unlocked: true },
-  { id: 'b_loan', emoji: '⛏️', title: 'Loan Crusher', unlocked: true },
-  { id: 'b_focus', emoji: '🎯', title: 'Laser Focus', unlocked: false },
-  { id: 'b_empire', emoji: '👑', title: '6 Branches', unlocked: false },
-];
-
-export function getLevelDetails(xp: number): {
-  level: number;
-  name: string;
-  emoji: string;
-  progressPct: number;
-  nextXp: number;
-} {
-  const levels = [
-    { level: 1, name: 'Seed', emoji: '🌱', min: 0, max: 200 },
-    { level: 2, name: 'Sprout', emoji: '🌿', min: 200, max: 500 },
-    { level: 3, name: 'Tree', emoji: '🌳', min: 500, max: 900 },
-    { level: 4, name: 'Forest', emoji: '🌲', min: 900, max: 1500 },
-    { level: 5, name: 'Empire', emoji: '👑', min: 1500, max: 5000 },
-  ];
-
-  const found =
-    levels.find((l) => xp >= l.min && xp < l.max) || levels[levels.length - 1];
-  const span = Math.max(1, found.max - found.min);
-  const progressPct = Math.min(
-    100,
-    Math.max(5, Math.round(((xp - found.min) / span) * 100))
-  );
-
-  return {
-    level: found.level,
-    name: found.name,
-    emoji: found.emoji,
-    progressPct,
-    nextXp: found.max,
-  };
-}
-
-export function formatShortINR(val: number): string {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
-  }).format(val || 0);
-}
-
-// Type and Data Exports for Today, Focus, Dreams, Money, and Me screens
-export type DayMode = DayPlanType;
-export type TaskStatus = TaskState;
-
-export interface FocusRuleTask {
-  id: string;
-  tier: '1-big' | '3-medium' | '5-small';
-  title: string;
-  done: boolean;
-}
-
-export interface LoanMountain {
-  id: string;
-  emoji: string;
-  title: string;
-  totalSteps: number;
-  paidSteps: number;
-}
-
-export interface WeeklyMoneyRecord {
-  id: string;
-  weekLabel: string;
-  sales: number;
-  expenses: number;
-}
-
-export interface GratitudeEntry {
-  id: string;
-  text: string;
-  date: string;
-}
-
-export const MANIFESTATION_LINES = DAILY_MANIFESTATIONS;
 
 export const WEEKDAY_TASKS: DailyTask[] = INITIAL_TASKS.filter(
   (t) => t.dayType === 'weekday'
@@ -699,73 +623,96 @@ export const SUNDAY_TASKS: DailyTask[] = INITIAL_TASKS.filter(
   (t) => t.dayType === 'sunday'
 );
 
-export const INITIAL_FOCUS_RULES: FocusRuleTask[] = [
+// Helper SVG data URLs for calm pastel dream illustrations when no external photo is used
+const svgPhoto = (bg1: string, bg2: string, icon: string) =>
+  `data:image/svg+xml;utf8,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 240">
+      <defs>
+        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="${bg1}"/>
+          <stop offset="100%" stop-color="${bg2}"/>
+        </linearGradient>
+      </defs>
+      <rect width="300" height="240" fill="url(#g)"/>
+      <circle cx="150" cy="115" r="58" fill="rgba(255,255,255,0.68)"/>
+      <text x="150" y="135" font-size="56" text-anchor="middle">${icon}</text>
+    </svg>`
+  )}`;
+
+// EXACTLY 6 DREAMS: Car, Trip, Home, Gold, Film, 6 Branches
+export const INITIAL_DREAMS: DreamCardItem[] = [
   {
-    id: 'fr_1',
-    tier: '1-big',
-    title: 'Finalize Branch #3 Kitchen Lease',
-    done: false,
+    id: 'dream_car',
+    emoji: '🚗',
+    title: 'Car',
+    daysLeft: 300,
+    pastelClass: 'pastel-peach',
+    imageUrl: svgPhoto('#FDECE4', '#FBCFE8', '🚗'),
   },
   {
-    id: 'fr_2',
-    tier: '3-medium',
-    title: 'Review Ruchitva Swiggy & Zomato Ratings',
-    done: true,
+    id: 'dream_trip',
+    emoji: '✈️',
+    title: 'Trip',
+    daysLeft: 420,
+    pastelClass: 'pastel-sky',
+    imageUrl: svgPhoto('#E0F2FE', '#BAE6FD', '✈️'),
   },
   {
-    id: 'fr_3',
-    tier: '3-medium',
-    title: 'Check Daily Packaging & Spice Stock',
-    done: false,
+    id: 'dream_home',
+    emoji: '🏠',
+    title: 'Home',
+    daysLeft: 365,
+    pastelClass: 'pastel-mint',
+    imageUrl: '/src/assets/images/dream_luxury_house_1794797319148.jpg',
   },
   {
-    id: 'fr_4',
-    tier: '5-small',
-    title: 'Reply to 5 VIP Customer Messages',
-    done: false,
+    id: 'dream_gold',
+    emoji: '🪙',
+    title: 'Gold',
+    daysLeft: 120,
+    pastelClass: 'pastel-lavender',
+    imageUrl: '/src/assets/images/dream_wealth_portfolio_1794797321389.jpg',
+  },
+  {
+    id: 'dream_film',
+    emoji: '🎬',
+    title: 'Film',
+    daysLeft: 500,
+    pastelClass: 'pastel-peach',
+    imageUrl: svgPhoto('#EEEAFB', '#DDD6FE', '🎬'),
+  },
+  {
+    id: 'dream_branches',
+    emoji: '🏪',
+    title: '6 Branches',
+    daysLeft: 240,
+    pastelClass: 'pastel-teal',
+    imageUrl: '/src/assets/images/dream_cloud_kitchen_1794797321463.jpg',
   },
 ];
 
-export const INITIAL_LOAN_MOUNTAINS: LoanMountain[] = [
-  {
-    id: 'lm_1',
-    emoji: '🏔️',
-    title: 'MoneyView Loan',
-    totalSteps: 12,
-    paidSteps: 6,
-  },
-  {
-    id: 'lm_2',
-    emoji: '⛰️',
-    title: 'L&T Kitchen Loan',
-    totalSteps: 10,
-    paidSteps: 5,
-  },
-  {
-    id: 'lm_3',
-    emoji: '🌋',
-    title: 'Personal & Chit',
-    totalSteps: 15,
-    paidSteps: 7,
-  },
-];
+export const INITIAL_MONEY_STATE: MoneyStateData = {
+  loansLeft: 405000,
+  saved: 0,
+  profit: 34000,
+  ordersToday: 25,
+  ordersWeek: 110,
+  ordersMonth: 420,
+  weeklyBars: [
+    { day: 'M', pct: 55, color: '#FDECE4' },
+    { day: 'T', pct: 68, color: '#E3F6EE' },
+    { day: 'W', pct: 62, color: '#EEEAFB' },
+    { day: 'T', pct: 78, color: '#E6F4FE' },
+    { day: 'F', pct: 85, color: '#D9F2F0' },
+    { day: 'S', pct: 94, color: '#FDECE4' },
+    { day: 'S', pct: 88, color: '#E3F6EE' },
+  ],
+};
 
-export const INITIAL_WEEKLY_MONEY: WeeklyMoneyRecord[] = [
-  { id: 'wm_1', weekLabel: 'Week 1', sales: 54000, expenses: 31000 },
-  { id: 'wm_2', weekLabel: 'Week 2', sales: 62000, expenses: 33000 },
-  { id: 'wm_3', weekLabel: 'Week 3', sales: 68500, expenses: 34500 },
-];
-
-export const INITIAL_GRATITUDE: GratitudeEntry[] = [
-  {
-    id: 'gr_1',
-    text: 'Ruchitva crossed 4.8 stars with happy customer reviews!',
-    date: 'Yesterday',
-  },
-  {
-    id: 'gr_2',
-    text: 'Peaceful morning walk and healthy family breakfast.',
-    date: '2 days ago',
-  },
-];
-
+export function formatShortINR(val: number): string {
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 0,
+  }).format(val || 0);
+}

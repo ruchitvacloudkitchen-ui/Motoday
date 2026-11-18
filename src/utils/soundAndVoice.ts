@@ -45,6 +45,29 @@ export function playCoinSound(): void {
   osc.stop(now + 0.46);
 }
 
+// Soft gentle "pop" sound when tapping the Manifestation Banner
+export function playSoftPopSound(): void {
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  const now = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(360, now);
+  osc.frequency.exponentialRampToValueAtTime(680, now + 0.085);
+
+  gain.gain.setValueAtTime(0.18, now);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
+
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+
+  osc.start(now);
+  osc.stop(now + 0.12);
+}
+
 // 2. Loud happy celebration fanfare when reaching 100 POINTS!
 export function playHappyCakeFanfare(): void {
   if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {

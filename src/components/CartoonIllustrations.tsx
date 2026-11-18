@@ -1,469 +1,311 @@
 import React from 'react';
-import { IllustrationPropType } from '../data/ruchitvaData';
+import { TimeThemeMode } from '../data/ruchitvaData';
 
-// 1. CARTOON SUN WITH SUNGLASSES MASCOT
-// Changes face: sleepy in morning (<35% or early), cool at noon, happy when tasks are done!
-interface SunMascotProps {
-  mood: 'sleepy' | 'cool' | 'happy';
+// 1. IMAGE 2 STYLE: NATURE LANDSCAPE HEADER (Mountains, Lake, Trees, Sun/Moon)
+// Sky changes with time: Morning = light blue & peach, Evening = soft orange & pink, Night = dark green-navy with moon
+interface NatureLandscapeHeaderProps {
+  theme: TimeThemeMode;
+  streak: number;
+}
+
+export const NatureLandscapeHeader: React.FC<NatureLandscapeHeaderProps> = ({
+  theme,
+  streak,
+}) => {
+  const greeting =
+    theme === 'morning'
+      ? 'Good morning, Srinivas'
+      : theme === 'evening'
+      ? 'Good evening, Srinivas'
+      : 'Good night, Srinivas';
+
+  const skyGradientId = `sky-${theme}`;
+
+  return (
+    <div className="relative w-full rounded-[32px] overflow-hidden shadow-sm">
+      <svg
+        viewBox="0 0 400 185"
+        className="w-full h-44 sm:h-48 block select-none"
+        preserveAspectRatio="xMidYMid slice"
+      >
+        <defs>
+          <linearGradient id={skyGradientId} x1="0" y1="0" x2="0" y2="1">
+            {theme === 'morning' && (
+              <>
+                <stop offset="0%" stopColor="#D6ECFA" />
+                <stop offset="55%" stopColor="#F4E7DE" />
+                <stop offset="100%" stopColor="#FDE2D2" />
+              </>
+            )}
+            {theme === 'evening' && (
+              <>
+                <stop offset="0%" stopColor="#F9B895" />
+                <stop offset="55%" stopColor="#FAD2CC" />
+                <stop offset="100%" stopColor="#FCE7D8" />
+              </>
+            )}
+            {theme === 'night' && (
+              <>
+                <stop offset="0%" stopColor="#0E2233" />
+                <stop offset="60%" stopColor="#173747" />
+                <stop offset="100%" stopColor="#234B57" />
+              </>
+            )}
+          </linearGradient>
+        </defs>
+
+        {/* Sky */}
+        <rect width="400" height="185" fill={`url(#${skyGradientId})`} />
+
+        {/* Sun or Moon */}
+        {theme === 'night' ? (
+          <g transform="translate(315, 38)">
+            <circle cx="18" cy="18" r="16" fill="#FDE68A" opacity="0.95" />
+            <circle
+              cx="24"
+              cy="14"
+              r="14"
+              fill="#11283A"
+            />
+            <circle cx="-40" cy="8" r="1.5" fill="#FEF3C7" opacity="0.8" />
+            <circle cx="-90" cy="22" r="1.8" fill="#FEF3C7" opacity="0.6" />
+            <circle cx="48" cy="30" r="1.4" fill="#FEF3C7" opacity="0.7" />
+          </g>
+        ) : (
+          <g transform="translate(310, 44)">
+            <circle
+              cx="20"
+              cy="20"
+              r="28"
+              fill={theme === 'morning' ? '#FDE68A' : '#FB923C'}
+              opacity="0.28"
+            />
+            <circle
+              cx="20"
+              cy="20"
+              r="19"
+              fill={theme === 'morning' ? '#FCD34D' : '#F97316'}
+            />
+          </g>
+        )}
+
+        {/* Distant Soft Mountains */}
+        <path
+          d="M 0 135 Q 65 82 140 122 T 290 105 T 400 128 L 400 185 L 0 185 Z"
+          fill={
+            theme === 'night'
+              ? '#1D4350'
+              : theme === 'evening'
+              ? '#E59982'
+              : '#A8CFCB'
+          }
+          opacity="0.75"
+        />
+
+        {/* Mid Hills */}
+        <path
+          d="M 0 145 Q 110 102 220 138 T 400 125 L 400 185 L 0 185 Z"
+          fill={
+            theme === 'night'
+              ? '#14333E'
+              : theme === 'evening'
+              ? '#C97A6E'
+              : '#7FB5AE'
+          }
+        />
+
+        {/* Calm Lake Reflection at Bottom */}
+        <rect
+          x="0"
+          y="152"
+          width="400"
+          height="33"
+          fill={
+            theme === 'night'
+              ? '#0D232D'
+              : theme === 'evening'
+              ? '#E8A598'
+              : '#9AD0CA'
+          }
+        />
+        <line
+          x1="280"
+          y1="164"
+          x2="345"
+          y2="164"
+          stroke="#FFFFFF"
+          strokeWidth="2"
+          strokeLinecap="round"
+          opacity="0.45"
+        />
+        <line
+          x1="295"
+          y1="172"
+          x2="330"
+          y2="172"
+          stroke="#FFFFFF"
+          strokeWidth="2"
+          strokeLinecap="round"
+          opacity="0.35"
+        />
+
+        {/* Minimal Pine Trees Silhouette */}
+        <g
+          fill={
+            theme === 'night'
+              ? '#091921'
+              : theme === 'evening'
+              ? '#7C3E3B'
+              : '#3A746D'
+          }
+        >
+          <polygon points="38,118 28,152 48,152" />
+          <polygon points="56,126 48,152 64,152" />
+          <polygon points="365,120 355,152 375,152" />
+        </g>
+      </svg>
+
+      {/* Top Overlay: Serif Greeting on Left + Small Cream Flame Pill on Right */}
+      <div className="absolute top-4 left-5 right-5 flex items-start justify-between gap-2">
+        <div>
+          <h1
+            className={`font-serif-calm text-2xl sm:text-[26px] font-bold leading-tight ${
+              theme === 'night' ? 'text-amber-50' : 'text-[#1F2937]'
+            }`}
+          >
+            {greeting}
+          </h1>
+        </div>
+
+        {/* Small Cream Flame Pill ("12 days") */}
+        <div className="px-3.5 py-1.5 rounded-full bg-[#FFFDF9]/95 text-[#1F2937] shadow-sm flex items-center gap-1.5 shrink-0">
+          <span className="text-sm">🔥</span>
+          <span className="text-xs font-extrabold tracking-tight">
+            {streak} days
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// 2. FLAT ILLUSTRATION ON THE RIGHT OF PASTEL CARDS (Image 1 & Image 2 style)
+// A soft circle badge with a calm character, sun, moon, sprout, or coin
+interface PastelCardIllustrationProps {
+  variant: 'calm' | 'sun' | 'moon' | 'coin' | 'sprout';
   size?: number;
 }
 
-export const SunMascotSVG: React.FC<SunMascotProps> = ({
-  mood,
-  size = 110,
+export const PastelCardIllustration: React.FC<PastelCardIllustrationProps> = ({
+  variant,
+  size = 68,
 }) => {
+  const circleBg =
+    variant === 'calm'
+      ? '#F7A08B'
+      : variant === 'sun'
+      ? '#FCD34D'
+      : variant === 'moon'
+      ? '#A5B4FC'
+      : variant === 'coin'
+      ? '#86EFAC'
+      : '#6EE7B7';
+
   return (
     <svg
       width={size}
       height={size}
-      viewBox="0 0 140 140"
-      className="animate-float select-none overflow-visible"
+      viewBox="0 0 80 80"
+      className="shrink-0 select-none overflow-visible"
     >
-      {/* Thick Outlined Sun Rays */}
-      <g stroke="#111827" strokeWidth="4" strokeLinejoin="round">
-        {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map(
-          (deg) => (
-            <polygon
-              key={deg}
-              points="70,4 61,24 79,24"
-              fill={mood === 'happy' ? '#FBBF24' : '#FDE047'}
-              transform={`rotate(${deg} 70 70)`}
-            />
-          )
-        )}
-      </g>
+      {/* Soft Circle Backdrop */}
+      <circle cx="40" cy="40" r="34" fill={circleBg} opacity="0.88" />
 
-      {/* Main Sun Body */}
-      <circle
-        cx="70"
-        cy="70"
-        r="44"
-        fill="#FACC15"
-        stroke="#111827"
-        strokeWidth="4.5"
-      />
-      {/* Cheek Blush */}
-      <ellipse cx="44" cy="80" rx="6" ry="3.5" fill="#FB7185" />
-      <ellipse cx="96" cy="80" rx="6" ry="3.5" fill="#FB7185" />
-
-      {/* Sunglasses */}
-      <g
-        transform={
-          mood === 'sleepy' ? 'translate(0, -8) rotate(-6 70 60)' : 'translate(0, 0)'
-        }
-      >
-        {/* Bridge & Strap */}
-        <line
-          x1="28"
-          y1="58"
-          x2="112"
-          y2="58"
-          stroke="#111827"
-          strokeWidth="5"
-          strokeLinecap="round"
-        />
-        {/* Left Lens */}
-        <rect
-          x="36"
-          y="50"
-          width="28"
-          height="19"
-          rx="5"
-          fill="#111827"
-          stroke="#111827"
-          strokeWidth="3"
-        />
-        {/* Right Lens */}
-        <rect
-          x="76"
-          y="50"
-          width="28"
-          height="19"
-          rx="5"
-          fill="#111827"
-          stroke="#111827"
-          strokeWidth="3"
-        />
-        {/* White Glint on Lenses */}
-        <line
-          x1="41"
-          y1="54"
-          x2="48"
-          y2="63"
-          stroke="#FFFFFF"
-          strokeWidth="3"
-          strokeLinecap="round"
-        />
-        <line
-          x1="81"
-          y1="54"
-          x2="88"
-          y2="63"
-          stroke="#FFFFFF"
-          strokeWidth="3"
-          strokeLinecap="round"
-        />
-      </g>
-
-      {/* Expression Mouth */}
-      {mood === 'sleepy' && (
-        <>
-          {/* Sleepy Yawn Circle + Zzz */}
-          <circle
-            cx="70"
-            cy="86"
-            r="7"
-            fill="#FB7185"
-            stroke="#111827"
-            strokeWidth="4"
-          />
-          <text
-            x="105"
-            y="32"
-            fill="#111827"
-            fontWeight="900"
-            fontSize="16"
-            fontFamily="Anton, sans-serif"
-          >
-            ZZZ
-          </text>
-        </>
-      )}
-
-      {mood === 'cool' && (
-        /* Cool Confident Smirk */
-        <path
-          d="M 54 84 Q 70 95 88 82"
-          fill="none"
-          stroke="#111827"
-          strokeWidth="4.5"
-          strokeLinecap="round"
-        />
-      )}
-
-      {mood === 'happy' && (
-        /* Big Happy Laughing Mouth + Crown Sparkle */
-        <>
+      {variant === 'calm' && (
+        /* Person Sitting Calmly */
+        <g>
+          {/* Head */}
+          <circle cx="40" cy="27" r="8.5" fill="#4A3531" />
+          <circle cx="40" cy="29" r="7.5" fill="#D98A6C" />
+          {/* Closed peaceful eyes */}
           <path
-            d="M 50 80 Q 70 104 90 80 Z"
-            fill="#EF4444"
-            stroke="#111827"
-            strokeWidth="4"
-            strokeLinejoin="round"
+            d="M 36.5 29 Q 38 30.5 39.5 29"
+            fill="none"
+            stroke="#3E2723"
+            strokeWidth="1.4"
+            strokeLinecap="round"
           />
-          <polygon
-            points="52,22 60,8 70,18 80,8 88,22"
-            fill="#F59E0B"
-            stroke="#111827"
-            strokeWidth="3.5"
-            strokeLinejoin="round"
+          <path
+            d="M 41 29 Q 42.5 30.5 44 29"
+            fill="none"
+            stroke="#3E2723"
+            strokeWidth="1.4"
+            strokeLinecap="round"
           />
-        </>
+          {/* Calm Torso & Crossed Legs */}
+          <path
+            d="M 27 54 C 28 40 52 40 53 54 Z"
+            fill="#FFFFFF"
+          />
+          <ellipse cx="40" cy="55" rx="16" ry="5" fill="#2D6A64" />
+        </g>
       )}
-    </svg>
-  );
-};
 
-// 2. ORIGINAL PLAYFUL CARTOON INDIAN MAN & WOMAN WITH SUNGLASSES
-// Holding a Phone, a Big Gold Coin, or a Cake!
-interface IndianCoupleIllustrationProps {
-  propType: IllustrationPropType;
-  customImageUrl?: string;
-}
-
-export const IndianCoupleIllustration: React.FC<
-  IndianCoupleIllustrationProps
-> = ({ propType, customImageUrl }) => {
-  if (customImageUrl) {
-    return (
-      <div className="w-48 h-40 mx-auto rounded-3xl overflow-hidden chunky-card bg-white flex items-center justify-center">
-        <img
-          src={customImageUrl}
-          alt="Custom Illustration"
-          className="w-full h-full object-cover"
-        />
-      </div>
-    );
-  }
-
-  return (
-    <svg
-      viewBox="0 0 280 185"
-      className="w-60 h-40 sm:w-68 sm:h-44 mx-auto select-none overflow-visible"
-    >
-      {/* Background Decorative Pill */}
-      <rect
-        x="20"
-        y="25"
-        width="240"
-        height="145"
-        rx="36"
-        fill="#FFFFFF"
-        stroke="#111827"
-        strokeWidth="4.5"
-      />
-
-      {/* LEFT CHARACTER: INDIAN MAN (Srinivas) WITH SUNGLASSES */}
-      <g transform="translate(32, 32)">
-        {/* Shoulders / Kurta Jacket */}
-        <path
-          d="M 12 138 C 12 100 76 100 76 138 Z"
-          fill="#2563EB"
-          stroke="#111827"
-          strokeWidth="4"
-        />
-        {/* Gold Collar Trim */}
-        <path
-          d="M 34 108 L 44 126 L 54 108"
-          fill="none"
-          stroke="#FACC15"
-          strokeWidth="4"
-          strokeLinecap="round"
-        />
-        {/* Head */}
-        <circle
-          cx="44"
-          cy="70"
-          r="28"
-          fill="#D97742"
-          stroke="#111827"
-          strokeWidth="4"
-        />
-        {/* Stylish Hair */}
-        <path
-          d="M 16 66 C 14 38 40 32 66 40 C 76 44 74 60 72 65 C 62 50 30 50 16 66 Z"
-          fill="#111827"
-          stroke="#111827"
-          strokeWidth="2"
-        />
-        {/* Cool Sunglasses */}
-        <rect
-          x="23"
-          y="58"
-          width="19"
-          height="13"
-          rx="3"
-          fill="#111827"
-          stroke="#111827"
-          strokeWidth="2"
-        />
-        <rect
-          x="47"
-          y="58"
-          width="19"
-          height="13"
-          rx="3"
-          fill="#111827"
-          stroke="#111827"
-          strokeWidth="2"
-        />
-        <line x1="42" y1="63" x2="47" y2="63" stroke="#111827" strokeWidth="3.5" />
-        <line x1="26" y1="61" x2="31" y2="67" stroke="#FFFFFF" strokeWidth="2.5" />
-        <line x1="50" y1="61" x2="55" y2="67" stroke="#FFFFFF" strokeWidth="2.5" />
-        {/* Mustache & Big Smile */}
-        <path
-          d="M 32 80 Q 44 75 56 80"
-          fill="none"
-          stroke="#111827"
-          strokeWidth="4"
-          strokeLinecap="round"
-        />
-        <path
-          d="M 36 84 Q 44 92 52 84"
-          fill="none"
-          stroke="#FFFFFF"
-          strokeWidth="3.5"
-          strokeLinecap="round"
-        />
-      </g>
-
-      {/* RIGHT CHARACTER: INDIAN WOMAN (Wife) WITH SUNGLASSES */}
-      <g transform="translate(158, 32)">
-        {/* Saree / Kurta Shoulders */}
-        <path
-          d="M 12 138 C 12 100 76 100 76 138 Z"
-          fill="#EC4899"
-          stroke="#111827"
-          strokeWidth="4"
-        />
-        <path
-          d="M 22 112 L 58 138"
-          stroke="#FACC15"
-          strokeWidth="5"
-          strokeLinecap="round"
-        />
-        {/* Hair Bun */}
-        <circle
-          cx="70"
-          cy="56"
-          r="13"
-          fill="#111827"
-          stroke="#111827"
-          strokeWidth="3"
-        />
-        {/* Gold Jhumka Earrings */}
-        <circle
-          cx="15"
-          cy="78"
-          r="5"
-          fill="#FACC15"
-          stroke="#111827"
-          strokeWidth="3"
-        />
-        <circle
-          cx="73"
-          cy="78"
-          r="5"
-          fill="#FACC15"
-          stroke="#111827"
-          strokeWidth="3"
-        />
-        {/* Head */}
-        <circle
-          cx="44"
-          cy="70"
-          r="27"
-          fill="#E08250"
-          stroke="#111827"
-          strokeWidth="4"
-        />
-        {/* Hair Front */}
-        <path
-          d="M 17 68 C 17 38 71 38 71 68 C 58 52 30 52 17 68 Z"
-          fill="#111827"
-        />
-        {/* Red Bindi */}
-        <circle cx="44" cy="54" r="3" fill="#EF4444" />
-        {/* Cool Cat-Eye Sunglasses */}
-        <rect
-          x="23"
-          y="58"
-          width="18"
-          height="12"
-          rx="4"
-          fill="#111827"
-          stroke="#FACC15"
-          strokeWidth="2"
-        />
-        <rect
-          x="47"
-          y="58"
-          width="18"
-          height="12"
-          rx="4"
-          fill="#111827"
-          stroke="#FACC15"
-          strokeWidth="2"
-        />
-        <line x1="41" y1="63" x2="47" y2="63" stroke="#111827" strokeWidth="3" />
-        {/* Happy Smile */}
-        <path
-          d="M 36 82 Q 44 91 52 82"
-          fill="none"
-          stroke="#111827"
-          strokeWidth="3.5"
-          strokeLinecap="round"
-        />
-      </g>
-
-      {/* CENTER PROP HELD BETWEEN THEM: COIN, PHONE, OR CAKE */}
-      {propType === 'coin' && (
-        <g transform="translate(112, 82)">
-          <circle
-            cx="28"
-            cy="28"
-            r="26"
-            fill="#FACC15"
-            stroke="#111827"
-            strokeWidth="4.5"
+      {variant === 'sun' && (
+        <g>
+          <circle cx="40" cy="40" r="16" fill="#FFFBEB" />
+          <circle cx="35" cy="38" r="1.6" fill="#451A03" />
+          <circle cx="45" cy="38" r="1.6" fill="#451A03" />
+          <path
+            d="M 36 44 Q 40 47.5 44 44"
+            fill="none"
+            stroke="#451A03"
+            strokeWidth="1.8"
+            strokeLinecap="round"
           />
-          <circle
-            cx="28"
-            cy="28"
-            r="19"
-            fill="#FDE047"
-            stroke="#111827"
-            strokeWidth="2.5"
-          />
+        </g>
+      )}
+
+      {variant === 'moon' && (
+        <g>
+          <circle cx="42" cy="40" r="15" fill="#FEF3C7" />
+          <circle cx="48" cy="36" r="12" fill={circleBg} />
+          <circle cx="28" cy="30" r="2" fill="#FFFFFF" />
+          <circle cx="52" cy="50" r="1.5" fill="#FFFFFF" />
+        </g>
+      )}
+
+      {variant === 'coin' && (
+        <g>
+          <circle cx="40" cy="40" r="18" fill="#FDE047" />
           <text
-            x="28"
-            y="36"
+            x="40"
+            y="46"
             textAnchor="middle"
-            fill="#111827"
-            fontWeight="900"
-            fontSize="24"
-            fontFamily="Anton, sans-serif"
+            fill="#1E3A2F"
+            fontSize="18"
+            fontWeight="800"
           >
             ₹
           </text>
         </g>
       )}
 
-      {propType === 'phone' && (
-        <g transform="translate(118, 76)">
-          <rect
-            x="4"
-            y="2"
-            width="36"
-            height="56"
-            rx="8"
-            fill="#38BDF8"
-            stroke="#111827"
-            strokeWidth="4.5"
-          />
-          <circle cx="22" cy="49" r="3" fill="#111827" />
+      {variant === 'sprout' && (
+        <g>
           <path
-            d="M 14 28 L 20 34 L 30 20"
-            fill="none"
-            stroke="#111827"
-            strokeWidth="4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </g>
-      )}
-
-      {propType === 'cake' && (
-        <g transform="translate(110, 78)">
-          {/* Bottom Cake Layer */}
-          <rect
-            x="6"
-            y="32"
-            width="48"
-            height="22"
-            rx="5"
-            fill="#F472B6"
-            stroke="#111827"
-            strokeWidth="4"
-          />
-          {/* Top Cake Layer */}
-          <rect
-            x="14"
-            y="16"
-            width="32"
-            height="16"
-            rx="4"
-            fill="#FDE047"
-            stroke="#111827"
-            strokeWidth="4"
-          />
-          {/* Candle + Flame */}
-          <rect
-            x="27"
-            y="4"
-            width="6"
-            height="12"
-            fill="#38BDF8"
-            stroke="#111827"
+            d="M 40 56 L 40 34"
+            stroke="#1B4332"
             strokeWidth="3"
+            strokeLinecap="round"
           />
-          <circle
-            cx="30"
-            cy="1"
-            r="4.5"
-            fill="#FB923C"
-            stroke="#111827"
-            strokeWidth="2.5"
+          <path
+            d="M 40 42 C 28 38 26 28 38 30 C 40 31 40 38 40 42 Z"
+            fill="#FFFFFF"
+          />
+          <path
+            d="M 40 38 C 52 34 54 24 42 26 C 40 27 40 34 40 38 Z"
+            fill="#D8F3DC"
           />
         </g>
       )}
@@ -471,49 +313,363 @@ export const IndianCoupleIllustration: React.FC<
   );
 };
 
-// 3. CAKE PROGRESS BAR (Fills layer by layer from 0 to 100 points)
-interface CakeProgressHeaderProps {
+// 3. IMAGE 1 STYLE: MEDITATING CHARACTER AT BOTTOM OF FOCUS SCREEN
+export const MeditatingPersonSVG: React.FC = () => {
+  return (
+    <svg
+      width="110"
+      height="95"
+      viewBox="0 0 120 100"
+      className="mx-auto select-none"
+    >
+      {/* Soft Ground Shadow */}
+      <ellipse cx="60" cy="88" rx="38" ry="6" fill="#CBD5E1" opacity="0.45" />
+      {/* Hair & Head */}
+      <circle cx="60" cy="28" r="13" fill="#2D232E" />
+      <circle cx="60" cy="31" r="11" fill="#E09F83" />
+      {/* Peaceful Closed Eyes */}
+      <path
+        d="M 54 31 Q 56.5 33 59 31"
+        fill="none"
+        stroke="#2D232E"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+      <path
+        d="M 61 31 Q 63.5 33 66 31"
+        fill="none"
+        stroke="#2D232E"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+      {/* Gentle Smile */}
+      <path
+        d="M 57 36 Q 60 38.5 63 36"
+        fill="none"
+        stroke="#2D232E"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      {/* Relaxed Shirt */}
+      <path
+        d="M 40 76 C 41 48 79 48 80 76 Z"
+        fill="#FDECE4"
+      />
+      {/* Crossed Meditating Legs */}
+      <ellipse cx="60" cy="78" rx="28" ry="8.5" fill="#3B7A6C" />
+    </svg>
+  );
+};
+
+// 4. PROGRESS CARD: "POINTS 40 / 100" WITH LAYER-BY-LAYER CAKE & SMALL PROGRESS RING ("5/13 TODAY")
+interface CakeProgressCardProps {
   points: number;
+  doneCount: number;
+  totalCount: number;
+  isNight: boolean;
 }
 
-export const CakeProgressHeader: React.FC<CakeProgressHeaderProps> = ({
+export const CakeProgressCard: React.FC<CakeProgressCardProps> = ({
   points,
+  doneCount,
+  totalCount,
+  isNight,
 }) => {
   const clamped = Math.min(100, Math.max(0, points));
-  const layers = [
-    { threshold: 20, label: 'Base', color: '#FDE047' },
-    { threshold: 40, label: 'Cream', color: '#FB7185' },
-    { threshold: 60, label: 'Choco', color: '#A855F7' },
-    { threshold: 80, label: 'Icing', color: '#38BDF8' },
-    { threshold: 100, label: 'Cherry', color: '#4ADE80' },
+  const donePct = Math.min(
+    100,
+    Math.round((doneCount / Math.max(1, totalCount)) * 100)
+  );
+
+  // SVG Ring params
+  const radius = 22;
+  const stroke = 4.5;
+  const normRadius = radius - stroke / 2;
+  const circumference = normRadius * 2 * Math.PI;
+  const dashOffset = circumference - (donePct / 100) * circumference;
+
+  // 5 Cake Layers (20 pts each)
+  const cakeLayers = [
+    { threshold: 20, color: '#FDE68A' }, // Sponge base
+    { threshold: 40, color: '#FBCFE8' }, // Strawberry cream
+    { threshold: 60, color: '#C4B5FD' }, // Lavender layer
+    { threshold: 80, color: '#A7F3D0' }, // Mint icing
+    { threshold: 100, color: '#FCA5A5' }, // Top cherry glaze
   ];
 
   return (
-    <div className="flex items-center gap-3 bg-white px-3.5 py-1.5 rounded-2xl chunky-card">
-      {/* Big Coin Counter: "37 / 100" */}
-      <div className="flex items-center gap-1.5">
-        <span className="text-xl">🪙</span>
-        <span className="font-poster text-xl sm:text-2xl text-[#111827] tracking-wider">
-          {clamped} / 100
-        </span>
+    <div
+      className={`rounded-[28px] p-5 flex items-center justify-between gap-4 ${
+        isNight ? 'night-card' : 'pastel-lavender'
+      }`}
+    >
+      {/* Left: POINTS 40 / 100 + Layer-by-Layer Cake */}
+      <div className="space-y-2.5 flex-1">
+        <div className="text-xs font-extrabold uppercase tracking-wider opacity-70">
+          REWARD PROGRESS
+        </div>
+        <div className="text-2xl sm:text-3xl font-black tracking-tight">
+          POINTS {clamped} / 100
+        </div>
+
+        {/* Cake that fills layer by layer */}
+        <div className="flex items-center gap-2 pt-0.5">
+          <div className="flex flex-col-reverse gap-1 w-28">
+            {cakeLayers.map((layer, idx) => {
+              const active =
+                clamped >= layer.threshold || (idx === 0 && clamped > 0);
+              return (
+                <div
+                  key={layer.threshold}
+                  style={{
+                    backgroundColor: active
+                      ? layer.color
+                      : isNight
+                      ? 'rgba(255,255,255,0.12)'
+                      : 'rgba(255,255,255,0.65)',
+                  }}
+                  className="h-2.5 w-full rounded-full transition-all duration-500 shadow-2xs"
+                />
+              );
+            })}
+          </div>
+          <span className="text-2xl">🎂</span>
+        </div>
       </div>
 
-      {/* 5-Layer Cake Progress Indicator */}
-      <div className="flex items-center gap-1" title="Cake Progress Bar">
-        {layers.map((layer, i) => {
-          const active = clamped >= layer.threshold || (i === 0 && clamped > 0);
-          return (
-            <div
-              key={layer.label}
-              style={{
-                backgroundColor: active ? layer.color : '#E5E7EB',
-              }}
-              className="w-3.5 h-5 rounded-sm border-2 border-[#111827] transition-all duration-300"
+      {/* Right: Small Round Progress Ring "5/13 TODAY" */}
+      <div className="flex flex-col items-center shrink-0">
+        <div className="relative w-14 h-14 flex items-center justify-center">
+          <svg height={radius * 2} width={radius * 2} className="-rotate-90">
+            <circle
+              stroke={isNight ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.75)'}
+              fill="transparent"
+              strokeWidth={stroke}
+              r={normRadius}
+              cx={radius}
+              cy={radius}
             />
-          );
-        })}
-        <span className="text-lg ml-0.5">{clamped >= 100 ? '🎂' : '🍰'}</span>
+            <circle
+              stroke="#2D8A6E"
+              fill="transparent"
+              strokeWidth={stroke}
+              strokeDasharray={`${circumference} ${circumference}`}
+              style={{ strokeDashoffset: dashOffset }}
+              strokeLinecap="round"
+              r={normRadius}
+              cx={radius}
+              cy={radius}
+            />
+          </svg>
+          <span className="absolute text-xs font-black">
+            {doneCount}/{totalCount}
+          </span>
+        </div>
+        <span className="text-[10px] font-extrabold uppercase tracking-wider opacity-65 mt-1">
+          TODAY
+        </span>
       </div>
     </div>
   );
 };
+
+// 5. MANIFESTATION BANNER (on Home, right under the greeting)
+// Full width, soft gradient by time theme, small illustration (sun, star, or lotus),
+// ONE manifestation line in BIG bold text (>=28px, centre aligned), tap anywhere to advance with soft pop sound,
+// small dots at the bottom, remembers last shown line & picks first line of the day by day number.
+interface ManifestationBannerProps {
+  theme: TimeThemeMode;
+  cards: {
+    id: string;
+    category: string;
+    line: string;
+    symbol: 'sun' | 'star' | 'lotus';
+  }[];
+  onPlayPop: () => void;
+}
+
+const MANIFEST_STORAGE_KEY = 'ruchitva_manifest_banner_v1';
+
+export const ManifestationBanner: React.FC<ManifestationBannerProps> = ({
+  theme,
+  cards,
+  onPlayPop,
+}) => {
+  const total = cards.length || 1;
+  const todayDayNumber = Math.floor(Date.now() / 86400000);
+
+  const [currentIndex, setCurrentIndex] = React.useState<number>(() => {
+    try {
+      const raw = localStorage.getItem(MANIFEST_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (
+          parsed &&
+          parsed.dayNumber === todayDayNumber &&
+          typeof parsed.index === 'number'
+        ) {
+          return parsed.index % total;
+        }
+      }
+    } catch {
+      // ignore storage errors
+    }
+    // First line of the day is chosen by the day number
+    return todayDayNumber % total;
+  });
+
+  // Remember the last shown line in localStorage
+  React.useEffect(() => {
+    try {
+      localStorage.setItem(
+        MANIFEST_STORAGE_KEY,
+        JSON.stringify({
+          dayNumber: todayDayNumber,
+          index: currentIndex,
+        })
+      );
+    } catch {
+      // ignore storage errors
+    }
+  }, [currentIndex, todayDayNumber]);
+
+  const activeCard = cards[currentIndex % total] || cards[0];
+  const isNight = theme === 'night';
+
+  const handleBannerTap = () => {
+    onPlayPop();
+    setCurrentIndex((prev) => (prev + 1) % total);
+  };
+
+  // Banner colours match the time theme (light in morning, warm in evening, navy and gold at night)
+  const bannerStyle: React.CSSProperties =
+    theme === 'night'
+      ? {
+          background:
+            'linear-gradient(135deg, #102038 0%, #173152 52%, #1E293B 100%)',
+          border: '1px solid rgba(251, 211, 141, 0.28)',
+          boxShadow: '0 14px 32px -10px rgba(4, 9, 20, 0.6)',
+        }
+      : theme === 'evening'
+      ? {
+          background:
+            'linear-gradient(135deg, #FFE8D6 0%, #FDE2E4 52%, #FAD2E1 100%)',
+          border: '1px solid rgba(251, 146, 60, 0.22)',
+          boxShadow: '0 12px 28px -8px rgba(234, 138, 118, 0.25)',
+        }
+      : {
+          background:
+            'linear-gradient(135deg, #FFFDF9 0%, #FDECE4 50%, #E6F4FE 100%)',
+          border: '1px solid rgba(255, 255, 255, 0.9)',
+          boxShadow: '0 12px 28px -8px rgba(148, 163, 184, 0.2)',
+        };
+
+  return (
+    <div
+      onClick={handleBannerTap}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleBannerTap();
+        }
+      }}
+      style={bannerStyle}
+      className="w-full rounded-[30px] px-6 py-6 text-center cursor-pointer select-none transition-transform active:scale-[0.99] overflow-hidden"
+    >
+      {/* Animated Inner Content (flips/slides smoothly on every tap) */}
+      <div
+        key={currentIndex}
+        className="animate-manifest-card flex flex-col items-center justify-center space-y-3"
+      >
+        {/* Small Illustration: Sun, Star, or Lotus */}
+        <div className="w-11 h-11 rounded-full bg-white/75 dark:bg-white/10 flex items-center justify-center shadow-2xs">
+          {activeCard.symbol === 'sun' && (
+            <svg width="26" height="26" viewBox="0 0 32 32">
+              <circle cx="16" cy="16" r="7" fill="#F59E0B" />
+              {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => (
+                <line
+                  key={deg}
+                  x1="16"
+                  y1="3"
+                  x2="16"
+                  y2="6.5"
+                  stroke="#F59E0B"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                  transform={`rotate(${deg} 16 16)`}
+                />
+              ))}
+            </svg>
+          )}
+
+          {activeCard.symbol === 'star' && (
+            <svg width="26" height="26" viewBox="0 0 32 32">
+              <path
+                d="M16 3 L19.2 11.6 L28 12.4 L21.2 18.2 L23.3 27 L16 22.2 L8.7 27 L10.8 18.2 L4 12.4 L12.8 11.6 Z"
+                fill="#FBBF24"
+              />
+            </svg>
+          )}
+
+          {activeCard.symbol === 'lotus' && (
+            <svg width="28" height="26" viewBox="0 0 36 32">
+              <path
+                d="M18 6 C22 12 22 20 18 25 C14 20 14 12 18 6 Z"
+                fill="#F472B6"
+              />
+              <path
+                d="M18 25 C11 23 7 16 9 10 C13 13 16 18 18 25 Z"
+                fill="#F9A8D4"
+              />
+              <path
+                d="M18 25 C25 23 29 16 27 10 C23 13 20 18 18 25 Z"
+                fill="#F9A8D4"
+              />
+              <path
+                d="M18 25 C9 26 4 21 4 16 C9 17 14 20 18 25 Z"
+                fill="#FBCFE8"
+              />
+              <path
+                d="M18 25 C27 26 32 21 32 16 C27 17 22 20 18 25 Z"
+                fill="#FBCFE8"
+              />
+            </svg>
+          )}
+        </div>
+
+        {/* ONE Manifestation Line in BIG Bold Text (at least 28px, max 10 words, centre aligned) */}
+        <p
+          className={`text-[28px] sm:text-[31px] font-black leading-[1.22] tracking-tight max-w-sm mx-auto ${
+            isNight ? 'text-[#FEF3C7]' : 'text-[#1F2937]'
+          }`}
+        >
+          “{activeCard.line}”
+        </p>
+      </div>
+
+      {/* Small Dots at the Bottom Showing Which Card It Is (no other buttons on the banner) */}
+      <div className="flex items-center justify-center gap-1.5 mt-5 flex-wrap max-w-xs mx-auto">
+        {cards.map((c, idx) => {
+          const isActive = idx === currentIndex;
+          return (
+            <span
+              key={c.id}
+              className={`rounded-full transition-all duration-300 ${
+                isActive
+                  ? isNight
+                    ? 'w-4 h-1.5 bg-[#FCD34D]'
+                    : 'w-4 h-1.5 bg-[#2D8A6E]'
+                  : isNight
+                  ? 'w-1.5 h-1.5 bg-amber-200/30'
+                  : 'w-1.5 h-1.5 bg-slate-400/40'
+              }`}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
