@@ -243,3 +243,96 @@ export function speakTextAloud(text: string): void {
     window.speechSynthesis.speak(utterance);
   } catch {}
 }
+
+// 8. Loud Reminder Alarm Sound + Vibration for Must-Do Boxes
+export function playLoudAlarmSound(): void {
+  if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+    try {
+      navigator.vibrate([400, 150, 400, 150, 600]);
+    } catch {}
+  }
+
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  // 4-pulse urgent melodic alarm bell
+  const pulses = [
+    { freq: 880, start: 0, dur: 0.18 },
+    { freq: 1174.66, start: 0.2, dur: 0.18 },
+    { freq: 880, start: 0.45, dur: 0.18 },
+    { freq: 1174.66, start: 0.65, dur: 0.25 },
+    { freq: 880, start: 1.0, dur: 0.18 },
+    { freq: 1318.51, start: 1.2, dur: 0.35 },
+  ];
+
+  pulses.forEach((p) => {
+    const now = ctx.currentTime + p.start;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(p.freq, now);
+
+    gain.gain.setValueAtTime(0.35, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + p.dur);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + p.dur + 0.02);
+  });
+}
+
+// 9. Download .ics Calendar Alarm file so phone alarm rings even when app is closed
+export function downloadAlarmIcsFile(
+  taskTitle: string,
+  targetTimeMs: number
+): void {
+  const formatIcsDate = (ms: number) => {
+    const d = new Date(ms);
+    return d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+  };
+
+  const startStr = formatIcsDate(targetTimeMs);
+  const endStr = formatIcsDate(targetTimeMs + 15 * 60 * 1000);
+  const cleanTitle = (taskTitle || 'Ruchitva Must-Do').replace(/\r?\n/g, ' ');
+
+  const icsContent = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Ruchitva Rising//Must-Do Alarm//EN',
+    'BEGIN:VEVENT',
+    `UID:mustdo-${Date.now()}@ruchitvarising.app`,
+    `DTSTAMP:${formatIcsDate(Date.now())}`,
+    `DTSTART:${startStr}`,
+    `DTEND:${endStr}`,
+    `SUMMARY:⏰ Must-Do: ${cleanTitle}`,
+    `DESCRIPTION:Ruchitva Rising Must-Do Reminder: ${cleanTitle}`,
+    'BEGIN:VALARM',
+    'TRIGGER:-PT0M',
+    'ACTION:DISPLAY',
+    `DESCRIPTION:⏰ ${cleanTitle}`,
+    'END:VALARM',
+    'BEGIN:VALARM',
+    'TRIGGER:-PT0M',
+    'ACTION:AUDIO',
+    'END:VALARM',
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ].join('\r\n');
+
+  const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute(
+    'download',
+    `ruchitva-alarm-${cleanTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.ics`
+  );
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+

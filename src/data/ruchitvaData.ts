@@ -4,6 +4,17 @@ export type TaskState = 'not_started' | 'processing' | 'completed' | 'cancelled'
 export type TaskStatus = TaskState;
 export type TimeThemeMode = 'morning' | 'evening' | 'night';
 
+export type DreamFilterCategory =
+  | 'All'
+  | 'Car'
+  | 'Trip'
+  | 'Home'
+  | 'Gold'
+  | 'Film'
+  | 'Business';
+
+export type DreamItemCategory = Exclude<DreamFilterCategory, 'All'>;
+
 export interface DailyTask {
   id: string;
   dayType: DayPlanType;
@@ -20,13 +31,28 @@ export interface DailyTask {
   rescheduledTo?: string;
 }
 
+export interface MustDoBoxItem {
+  id: string;
+  boxNumber: 1 | 2 | 3;
+  text: string;
+  done: boolean;
+  pastelTone: 'peach' | 'lavender' | 'sky';
+  reminderAtMs?: number;
+  reminderLabel?: string;
+  reminderTriggered?: boolean;
+  carryOverText?: string;
+}
+
 export interface DreamCardItem {
   id: string;
-  emoji: string;
   title: string;
-  daysLeft: number;
-  pastelClass: string;
-  imageUrl: string;
+  category: DreamItemCategory;
+  targetDate: string; // YYYY-MM-DD
+  progressPct: number;
+  achieved: boolean;
+  zoom: number;
+  offsetX: number;
+  offsetY: number;
 }
 
 export interface MoneyStateData {
@@ -48,8 +74,20 @@ export interface MonthlyOrderPlan {
   monthlySaveLabel: string;
 }
 
+// 8 NEON MANIFESTATION COLOURS (by card order, then repeat)
+export const NEON_MANIFESTATION_COLOURS: string[] = [
+  '#FF2EC4', // 1. Neon pink
+  '#39FF14', // 2. Neon green
+  '#00F0FF', // 3. Neon cyan
+  '#FFF200', // 4. Neon yellow
+  '#FF6A00', // 5. Neon orange
+  '#B026FF', // 6. Neon purple
+  '#CCFF00', // 7. Neon lime
+  '#1F51FF', // 8. Neon blue
+];
+
 export function getMonthlyOrderPlan(date: Date = new Date()): MonthlyOrderPlan {
-  const m = date.getMonth(); // 0 = Jan, 1 = Feb, ..., 11 = Dec
+  const m = date.getMonth();
   switch (m) {
     case 0:
       return {
@@ -106,7 +144,6 @@ export function getMonthlyOrderPlan(date: Date = new Date()): MonthlyOrderPlan {
         monthlySaveLabel: 'save 1.36L',
       };
     default:
-      // Dec (and Nov leading into Dec)
       return {
         monthName: 'Dec',
         dailyTarget: 25,
@@ -121,6 +158,14 @@ export function getMonthlyOrderPlan(date: Date = new Date()): MonthlyOrderPlan {
 export function getDaysLeftToJune2027(now: Date = new Date()): number {
   const target = new Date('2027-06-30T23:59:59');
   const diffMs = target.getTime() - now.getTime();
+  return Math.max(0, Math.ceil(diffMs / 86400000));
+}
+
+export function getDaysLeftForDate(targetDateStr: string): number {
+  if (!targetDateStr) return 180;
+  const target = new Date(`${targetDateStr}T23:59:59`);
+  if (isNaN(target.getTime())) return 180;
+  const diffMs = target.getTime() - Date.now();
   return Math.max(0, Math.ceil(diffMs / 86400000));
 }
 
@@ -291,7 +336,6 @@ export const FOCUS_QUOTES: string[] = [
   'Peaceful mind creates lasting wealth.',
 ];
 
-// Max 12 words per money quote from famous advisors
 export const MONEY_QUOTES: { quote: string; author: string }[] = [
   {
     quote: 'Do not save what is left after spending.',
@@ -308,6 +352,31 @@ export const MONEY_QUOTES: { quote: string; author: string }[] = [
   {
     quote: 'Stay the course and let time compound.',
     author: 'John Bogle',
+  },
+];
+
+export const INITIAL_MUST_DOS: MustDoBoxItem[] = [
+  {
+    id: 'md_1',
+    boxNumber: 1,
+    text: 'Check Branch 2 kitchen stock',
+    done: false,
+    pastelTone: 'peach',
+  },
+  {
+    id: 'md_2',
+    boxNumber: 2,
+    text: 'Reply to top customer reviews',
+    done: false,
+    pastelTone: 'lavender',
+  },
+  {
+    id: 'md_3',
+    boxNumber: 3,
+    text: 'Save daily kitchen profit',
+    done: false,
+    pastelTone: 'sky',
+    carryOverText: 'Call packaging vendor today',
   },
 ];
 
@@ -473,7 +542,7 @@ export const INITIAL_TASKS: DailyTask[] = [
     status: 'not_started',
   },
 
-  // SATURDAY (Shutter work & kitchen expansion)
+  // SATURDAY
   {
     id: 'sat_1',
     dayType: 'saturday',
@@ -549,7 +618,7 @@ export const INITIAL_TASKS: DailyTask[] = [
     status: 'not_started',
   },
 
-  // SUNDAY (Rest, family, weekly review)
+  // SUNDAY
   {
     id: 'sun_1',
     dayType: 'sunday',
@@ -623,71 +692,85 @@ export const SUNDAY_TASKS: DailyTask[] = INITIAL_TASKS.filter(
   (t) => t.dayType === 'sunday'
 );
 
-// Helper SVG data URLs for calm pastel dream illustrations when no external photo is used
-const svgPhoto = (bg1: string, bg2: string, icon: string) =>
-  `data:image/svg+xml;utf8,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 240">
-      <defs>
-        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="${bg1}"/>
-          <stop offset="100%" stop-color="${bg2}"/>
-        </linearGradient>
-      </defs>
-      <rect width="300" height="240" fill="url(#g)"/>
-      <circle cx="150" cy="115" r="58" fill="rgba(255,255,255,0.68)"/>
-      <text x="150" y="135" font-size="56" text-anchor="middle">${icon}</text>
-    </svg>`
-  )}`;
-
-// EXACTLY 6 DREAMS: Car, Trip, Home, Gold, Film, 6 Branches
+// START WITH THESE 7 EMPTY DREAM CARDS (NO stock or AI images — user uploads manually!)
+// Car, Foreign Trip, Home or Plot, Gold, My Film, 6 Branches, Loan Free
 export const INITIAL_DREAMS: DreamCardItem[] = [
   {
     id: 'dream_car',
-    emoji: '🚗',
     title: 'Car',
-    daysLeft: 300,
-    pastelClass: 'pastel-peach',
-    imageUrl: svgPhoto('#FDECE4', '#FBCFE8', '🚗'),
+    category: 'Car',
+    targetDate: '2027-08-15',
+    progressPct: 35,
+    achieved: false,
+    zoom: 1,
+    offsetX: 0,
+    offsetY: 0,
   },
   {
     id: 'dream_trip',
-    emoji: '✈️',
-    title: 'Trip',
-    daysLeft: 420,
-    pastelClass: 'pastel-sky',
-    imageUrl: svgPhoto('#E0F2FE', '#BAE6FD', '✈️'),
+    title: 'Foreign Trip',
+    category: 'Trip',
+    targetDate: '2027-12-20',
+    progressPct: 25,
+    achieved: false,
+    zoom: 1,
+    offsetX: 0,
+    offsetY: 0,
   },
   {
     id: 'dream_home',
-    emoji: '🏠',
-    title: 'Home',
-    daysLeft: 365,
-    pastelClass: 'pastel-mint',
-    imageUrl: '/src/assets/images/dream_luxury_house_1794797319148.jpg',
+    title: 'Home or Plot',
+    category: 'Home',
+    targetDate: '2027-10-10',
+    progressPct: 50,
+    achieved: false,
+    zoom: 1,
+    offsetX: 0,
+    offsetY: 0,
   },
   {
     id: 'dream_gold',
-    emoji: '🪙',
     title: 'Gold',
-    daysLeft: 120,
-    pastelClass: 'pastel-lavender',
-    imageUrl: '/src/assets/images/dream_wealth_portfolio_1794797321389.jpg',
+    category: 'Gold',
+    targetDate: '2027-05-01',
+    progressPct: 65,
+    achieved: false,
+    zoom: 1,
+    offsetX: 0,
+    offsetY: 0,
   },
   {
     id: 'dream_film',
-    emoji: '🎬',
-    title: 'Film',
-    daysLeft: 500,
-    pastelClass: 'pastel-peach',
-    imageUrl: svgPhoto('#EEEAFB', '#DDD6FE', '🎬'),
+    title: 'My Film',
+    category: 'Film',
+    targetDate: '2028-01-15',
+    progressPct: 20,
+    achieved: false,
+    zoom: 1,
+    offsetX: 0,
+    offsetY: 0,
   },
   {
     id: 'dream_branches',
-    emoji: '🏪',
     title: '6 Branches',
-    daysLeft: 240,
-    pastelClass: 'pastel-teal',
-    imageUrl: '/src/assets/images/dream_cloud_kitchen_1794797321463.jpg',
+    category: 'Business',
+    targetDate: '2027-06-30',
+    progressPct: 45,
+    achieved: false,
+    zoom: 1,
+    offsetX: 0,
+    offsetY: 0,
+  },
+  {
+    id: 'dream_loan_free',
+    title: 'Loan Free',
+    category: 'Business',
+    targetDate: '2027-04-30',
+    progressPct: 60,
+    achieved: false,
+    zoom: 1,
+    offsetX: 0,
+    offsetY: 0,
   },
 ];
 

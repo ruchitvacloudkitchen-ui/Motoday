@@ -1,11 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  Plus,
+  Check,
+  Trash2,
+  Pencil,
+  Camera,
+  ZoomIn,
+  X,
+} from 'lucide-react';
 import {
   DreamCardItem,
+  DreamFilterCategory,
+  DreamItemCategory,
   MoneyStateData,
   MONEY_QUOTES,
   formatShortINR,
   getMonthlyOrderPlan,
   getDaysLeftToJune2027,
+  getDaysLeftForDate,
 } from '../data/ruchitvaData';
 import {
   playCoinSound,
@@ -13,41 +25,61 @@ import {
   playStepChime,
   setCalmMusicPlaying,
 } from '../utils/soundAndVoice';
+import {
+  getAllDreamPhotosFromDb,
+  saveDreamPhotoToDb,
+  removeDreamPhotoFromDb,
+  resizeImageToMax1200,
+} from '../utils/dreamPhotoDb';
 import { PastelCardIllustration } from './CartoonIllustrations';
+
+const FILTER_CHIPS: DreamFilterCategory[] = [
+  'All',
+  'Car',
+  'Trip',
+  'Home',
+  'Gold',
+  'Film',
+  'Business',
+];
+
+const DREAM_CATEGORIES: DreamItemCategory[] = [
+  'Car',
+  'Trip',
+  'Home',
+  'Gold',
+  'Film',
+  'Business',
+];
 
 // Small Flat Illustration of a Money Jar with Sparkles (SVG)
 const MoneyJarSparklesSVG: React.FC = () => (
   <svg
-    width="54"
-    height="54"
+    width="52"
+    height="52"
     viewBox="0 0 64 64"
     className="shrink-0 select-none overflow-visible"
   >
-    {/* Soft Gold Aura */}
-    <circle cx="32" cy="34" r="26" fill="#FDE68A" opacity="0.65" />
-    {/* Sparkles */}
+    <circle cx="32" cy="34" r="26" fill="#FDE68A" opacity="0.25" />
     <path
       d="M12 14 L14 19 L19 21 L14 23 L12 28 L10 23 L5 21 L10 19 Z"
-      fill="#F59E0B"
+      fill="#FBBF24"
     />
     <path
       d="M53 10 L54.5 14 L58.5 15.5 L54.5 17 L53 21 L51.5 17 L47.5 15.5 L51.5 14 Z"
-      fill="#F59E0B"
+      fill="#FBBF24"
     />
-    {/* Jar Lid */}
-    <rect x="21" y="14" width="22" height="6" rx="3" fill="#B45309" />
-    {/* Glass Jar Body */}
+    <rect x="21" y="14" width="22" height="6" rx="3" fill="#D97706" />
     <rect
       x="17"
       y="20"
       width="30"
       height="34"
       rx="10"
-      fill="#FFFBEB"
-      stroke="#D97706"
+      fill="rgba(255, 251, 235, 0.92)"
+      stroke="#F59E0B"
       strokeWidth="2.5"
     />
-    {/* Gold Coins Inside Jar */}
     <circle cx="26" cy="44" r="6" fill="#FBBF24" />
     <circle cx="37" cy="45" r="6" fill="#F59E0B" />
     <circle cx="32" cy="38" r="6.5" fill="#FCD34D" />
@@ -65,21 +97,16 @@ const MoneyJarSparklesSVG: React.FC = () => (
 );
 
 // ============================================================================
-// SAVINGS GOAL BANNER (Top of Dreams Tab)
-// 4 Looping Cards:
-// 1. "₹5 LAKH BY 30 JUN 2027" (progress + 3 short stats)
-// 2. "THIS MONTH: [target] ORDERS" (orders done / target, with a bar)
-// 3. "THIS WEEK: [target] ORDERS" (done / target, with a bar)
-// 4. "STRETCH DREAM: ₹10 LAKH" (locked card that unlocks when saved passes ₹5 lakh)
+// SAVINGS GOAL BANNER (Top of Dreams Tab — Dark Glass + Gold-Peach Glow)
 // ============================================================================
 interface SavingsGoalBannerProps {
   money: MoneyStateData;
-  isNight: boolean;
+  darkGlass?: boolean;
 }
 
 export const SavingsGoalBanner: React.FC<SavingsGoalBannerProps> = ({
   money,
-  isNight,
+  darkGlass = true,
 }) => {
   const [cardIndex, setCardIndex] = useState<number>(0);
 
@@ -107,7 +134,6 @@ export const SavingsGoalBanner: React.FC<SavingsGoalBannerProps> = ({
     Math.round((ordersWeek / Math.max(1, plan.weeklyTarget)) * 100)
   );
 
-  // Compare saved money to the plan for this month
   const isAhead = savedAmount >= plan.monthlySaveTarget;
   const unlockedStretch = savedAmount >= goalFiveLakh;
   const stretchPct = unlockedStretch
@@ -119,18 +145,19 @@ export const SavingsGoalBanner: React.FC<SavingsGoalBannerProps> = ({
     setCardIndex((prev) => (prev + 1) % 4);
   };
 
-  const bannerStyle: React.CSSProperties = isNight
+  const bannerStyle: React.CSSProperties = darkGlass
     ? {
         background:
-          'linear-gradient(135deg, #16243B 0%, #24344D 52%, #2E263D 100%)',
-        border: '1px solid rgba(251, 211, 141, 0.32)',
-        boxShadow: '0 14px 32px -10px rgba(4, 9, 20, 0.6)',
+          'linear-gradient(135deg, rgba(16, 48, 66, 0.78) 0%, rgba(12, 34, 48, 0.88) 55%, rgba(45, 34, 24, 0.78) 100%)',
+        border: '1px solid rgba(251, 191, 36, 0.35)',
+        boxShadow:
+          '0 18px 40px -12px rgba(0, 0, 0, 0.65), inset 0 1px 1px rgba(255, 255, 255, 0.2)',
+        backdropFilter: 'blur(20px)',
       }
     : {
         background:
           'linear-gradient(135deg, #FFFDF7 0%, #FDECE4 52%, #FDE68A 100%)',
         border: '1px solid rgba(251, 191, 36, 0.35)',
-        boxShadow: '0 12px 28px -8px rgba(217, 119, 6, 0.16)',
       };
 
   return (
@@ -145,67 +172,53 @@ export const SavingsGoalBanner: React.FC<SavingsGoalBannerProps> = ({
         }
       }}
       style={bannerStyle}
-      className="w-full rounded-[30px] p-5 cursor-pointer select-none transition-transform active:scale-[0.99] overflow-hidden"
+      className="w-full rounded-[30px] p-5 cursor-pointer select-none transition-transform active:scale-[0.99] overflow-hidden text-white"
     >
-      {/* Top Row: AHEAD / BEHIND Tag + Money Jar with Sparkles Illustration */}
       <div className="flex items-center justify-between gap-2 mb-2">
-        <span
-          className={`px-3 py-1 rounded-full text-[11px] font-black tracking-wider ${
-            isNight
-              ? 'bg-white/10 text-amber-100'
-              : 'bg-white/85 text-[#1F2937]'
-          }`}
-        >
+        <span className="px-3 py-1 rounded-full text-[11px] font-black tracking-wider bg-white/12 border border-white/20 text-amber-200">
           {isAhead ? 'AHEAD 🟢' : 'BEHIND 🔴'}
         </span>
-
         <MoneyJarSparklesSVG />
       </div>
 
-      {/* Animated Card Body (4 looping cards) */}
       <div key={cardIndex} className="animate-manifest-card space-y-3">
-        {/* CARD 1: "₹5 LAKH BY 30 JUN 2027" */}
         {cardIndex === 0 && (
           <>
-            <h2
-              className={`text-[28px] sm:text-[30px] font-black leading-tight tracking-tight ${
-                isNight ? 'text-[#FEF3C7]' : 'text-[#1F2937]'
-              }`}
-            >
+            <h2 className="text-[28px] sm:text-[30px] font-black leading-tight tracking-tight text-[#FEF3C7]">
               ₹5 LAKH BY 30 JUN 2027
             </h2>
 
-            {/* Thin Progress Bar */}
-            <div className="h-2 w-full rounded-full bg-black/10 dark:bg-white/15 overflow-hidden">
+            <div className="h-2 w-full rounded-full bg-white/15 overflow-hidden">
               <div
-                style={{ width: `${savedPct}%` }}
-                className="h-full bg-[#2D8A6E] rounded-full transition-all duration-500"
+                style={{ width: `${Math.max(4, savedPct)}%` }}
+                className="h-full bg-gradient-to-r from-amber-400 to-cyan-400 rounded-full transition-all duration-500"
               />
             </div>
 
-            {/* 3 Short Stats in a Row */}
             <div className="grid grid-cols-3 gap-2 pt-1 text-left">
-              <div className="rounded-2xl bg-white/70 dark:bg-white/10 px-2.5 py-2">
-                <div className="text-[10px] font-extrabold uppercase opacity-65">
+              <div className="rounded-2xl bg-white/10 border border-white/12 px-2.5 py-2">
+                <div className="text-[10px] font-extrabold uppercase text-white/60">
                   SAVED
                 </div>
-                <div className="text-xs sm:text-sm font-black truncate">
+                <div className="text-xs sm:text-sm font-black truncate text-white">
                   {formatShortINR(savedAmount)}
                 </div>
               </div>
 
-              <div className="rounded-2xl bg-white/70 dark:bg-white/10 px-2.5 py-2">
-                <div className="text-[10px] font-extrabold uppercase opacity-65">
+              <div className="rounded-2xl bg-white/10 border border-white/12 px-2.5 py-2">
+                <div className="text-[10px] font-extrabold uppercase text-white/60">
                   DAYS LEFT
                 </div>
-                <div className="text-xs sm:text-sm font-black">{daysLeft}</div>
+                <div className="text-xs sm:text-sm font-black text-white">
+                  {daysLeft}
+                </div>
               </div>
 
-              <div className="rounded-2xl bg-white/70 dark:bg-white/10 px-2.5 py-2">
-                <div className="text-[10px] font-extrabold uppercase opacity-65">
+              <div className="rounded-2xl bg-white/10 border border-white/12 px-2.5 py-2">
+                <div className="text-[10px] font-extrabold uppercase text-white/60">
                   TODAY&apos;S TARGET
                 </div>
-                <div className="text-xs sm:text-sm font-black">
+                <div className="text-xs sm:text-sm font-black text-white">
                   {plan.dailyTarget} orders
                 </div>
               </div>
@@ -213,25 +226,18 @@ export const SavingsGoalBanner: React.FC<SavingsGoalBannerProps> = ({
           </>
         )}
 
-        {/* CARD 2: "THIS MONTH: [650] ORDERS" */}
         {cardIndex === 1 && (
           <>
-            <h2
-              className={`text-[28px] sm:text-[30px] font-black leading-tight tracking-tight ${
-                isNight ? 'text-[#FEF3C7]' : 'text-[#1F2937]'
-              }`}
-            >
+            <h2 className="text-[28px] sm:text-[30px] font-black leading-tight tracking-tight text-[#FEF3C7]">
               THIS MONTH: {plan.monthlyTarget.toLocaleString('en-IN')} ORDERS
             </h2>
-
-            <div className="h-2 w-full rounded-full bg-black/10 dark:bg-white/15 overflow-hidden">
+            <div className="h-2 w-full rounded-full bg-white/15 overflow-hidden">
               <div
                 style={{ width: `${monthPct}%` }}
-                className="h-full bg-[#2D8A6E] rounded-full transition-all duration-500"
+                className="h-full bg-gradient-to-r from-cyan-400 to-emerald-400 rounded-full transition-all duration-500"
               />
             </div>
-
-            <div className="flex items-center justify-between text-xs font-extrabold pt-1 opacity-85">
+            <div className="flex items-center justify-between text-xs font-extrabold pt-1 text-white/80">
               <span>
                 {ordersMonth.toLocaleString('en-IN')} /{' '}
                 {plan.monthlyTarget.toLocaleString('en-IN')} DONE
@@ -243,25 +249,18 @@ export const SavingsGoalBanner: React.FC<SavingsGoalBannerProps> = ({
           </>
         )}
 
-        {/* CARD 3: "THIS WEEK: [150] ORDERS" */}
         {cardIndex === 2 && (
           <>
-            <h2
-              className={`text-[28px] sm:text-[30px] font-black leading-tight tracking-tight ${
-                isNight ? 'text-[#FEF3C7]' : 'text-[#1F2937]'
-              }`}
-            >
+            <h2 className="text-[28px] sm:text-[30px] font-black leading-tight tracking-tight text-[#FEF3C7]">
               THIS WEEK: {plan.weeklyTarget} ORDERS
             </h2>
-
-            <div className="h-2 w-full rounded-full bg-black/10 dark:bg-white/15 overflow-hidden">
+            <div className="h-2 w-full rounded-full bg-white/15 overflow-hidden">
               <div
                 style={{ width: `${weekPct}%` }}
-                className="h-full bg-[#2D8A6E] rounded-full transition-all duration-500"
+                className="h-full bg-gradient-to-r from-cyan-400 to-emerald-400 rounded-full transition-all duration-500"
               />
             </div>
-
-            <div className="flex items-center justify-between text-xs font-extrabold pt-1 opacity-85">
+            <div className="flex items-center justify-between text-xs font-extrabold pt-1 text-white/80">
               <span>
                 {ordersWeek} / {plan.weeklyTarget} DONE
               </span>
@@ -272,25 +271,18 @@ export const SavingsGoalBanner: React.FC<SavingsGoalBannerProps> = ({
           </>
         )}
 
-        {/* CARD 4: "STRETCH DREAM: ₹10 LAKH" (Locked until saved passes ₹5 lakh) */}
         {cardIndex === 3 && (
           <>
-            <h2
-              className={`text-[28px] sm:text-[30px] font-black leading-tight tracking-tight ${
-                isNight ? 'text-[#FEF3C7]' : 'text-[#1F2937]'
-              }`}
-            >
+            <h2 className="text-[28px] sm:text-[30px] font-black leading-tight tracking-tight text-[#FEF3C7]">
               STRETCH DREAM: ₹10 LAKH
             </h2>
-
-            <div className="h-2 w-full rounded-full bg-black/10 dark:bg-white/15 overflow-hidden">
+            <div className="h-2 w-full rounded-full bg-white/15 overflow-hidden">
               <div
                 style={{ width: `${stretchPct}%` }}
-                className="h-full bg-amber-500 rounded-full transition-all duration-500"
+                className="h-full bg-amber-400 rounded-full transition-all duration-500"
               />
             </div>
-
-            <div className="flex items-center justify-between text-xs font-extrabold pt-1 opacity-85">
+            <div className="flex items-center justify-between text-xs font-extrabold pt-1 text-white/80">
               <span>
                 {unlockedStretch
                   ? '🔓 UNLOCKED! KEEP GROWING'
@@ -302,19 +294,14 @@ export const SavingsGoalBanner: React.FC<SavingsGoalBannerProps> = ({
         )}
       </div>
 
-      {/* Small Dots at the Bottom Showing Which Card is Open */}
       <div className="flex items-center justify-center gap-1.5 mt-4">
         {[0, 1, 2, 3].map((idx) => (
           <span
             key={idx}
             className={`rounded-full transition-all duration-300 ${
               idx === cardIndex
-                ? isNight
-                  ? 'w-4 h-1.5 bg-[#FCD34D]'
-                  : 'w-4 h-1.5 bg-[#2D8A6E]'
-                : isNight
-                ? 'w-1.5 h-1.5 bg-amber-200/35'
-                : 'w-1.5 h-1.5 bg-slate-500/35'
+                ? 'w-4 h-1.5 bg-amber-400'
+                : 'w-1.5 h-1.5 bg-white/30'
             }`}
           />
         ))}
@@ -324,28 +311,78 @@ export const SavingsGoalBanner: React.FC<SavingsGoalBannerProps> = ({
 };
 
 // ============================================================================
-// TAB 2: DREAMS TAB
-// Top: SAVINGS GOAL BANNER
-// Below: Max 6 big picture cards, 2 per row: Car, Trip, Home, Gold, Film, 6 Branches.
+// TAB 2: DREAMS PAGE (Premium Dark Glass Style + Manual IndexedDB Photos)
 // ============================================================================
 interface DreamsScreenProps {
   dreams: DreamCardItem[];
   money: MoneyStateData;
-  isNight: boolean;
+  onUpdateDream: (id: string, updates: Partial<DreamCardItem>) => void;
+  onAddDream: (dream: DreamCardItem, photoDataUrl?: string) => void;
+  onDeleteDream: (id: string) => void;
+  onTriggerConfetti: () => void;
 }
 
 export const DreamsScreen: React.FC<DreamsScreenProps> = ({
   dreams,
   money,
-  isNight,
+  onUpdateDream,
+  onAddDream,
+  onDeleteDream,
+  onTriggerConfetti,
 }) => {
-  const [selectedDream, setSelectedDream] = useState<DreamCardItem | null>(
-    null
-  );
+  const [activeFilter, setActiveFilter] = useState<DreamFilterCategory>('All');
+  const [photoMap, setPhotoMap] = useState<Record<string, string>>({});
+  const [selectedDreamId, setSelectedDreamId] = useState<string | null>(null);
+
+  // 1-Minute Visualise state
   const [visualising, setVisualising] = useState<boolean>(false);
   const [secondsLeft, setSecondsLeft] = useState<number>(60);
   const [receivedDone, setReceivedDone] = useState<boolean>(false);
 
+  // Delete confirmation ("Sure?") inside Full-Screen View
+  const [confirmDelete, setConfirmDelete] = useState<boolean>(false);
+
+  // Add / Edit Dream Modal state
+  const [formOpen, setFormOpen] = useState<boolean>(false);
+  const [editingDreamId, setEditingDreamId] = useState<string | null>(null);
+  const [formTitle, setFormTitle] = useState<string>('');
+  const [formCategory, setFormCategory] = useState<DreamItemCategory>('Car');
+  const [formDate, setFormDate] = useState<string>('2027-06-30');
+  const [formPhotoPreview, setFormPhotoPreview] = useState<string>('');
+
+  // File input refs for empty cards & full-screen change photo
+  const cardFileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const fullScreenFileRef = useRef<HTMLInputElement | null>(null);
+  const modalFileRef = useRef<HTMLInputElement | null>(null);
+
+  // Pan (drag to move) & Pinch to zoom state for photo frame
+  const dragStartRef = useRef<{
+    dreamId: string;
+    startX: number;
+    startY: number;
+    origX: number;
+    origY: number;
+  } | null>(null);
+  const pinchStartDistRef = useRef<{
+    dreamId: string;
+    startDist: number;
+    origZoom: number;
+  } | null>(null);
+
+  // Load saved photos from IndexedDB on mount
+  useEffect(() => {
+    let mounted = true;
+    getAllDreamPhotosFromDb().then((loaded) => {
+      if (mounted) {
+        setPhotoMap(loaded);
+      }
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // 1-Minute Visualise countdown
   useEffect(() => {
     if (!visualising) return;
     const timer = setInterval(() => {
@@ -363,87 +400,382 @@ export const DreamsScreen: React.FC<DreamsScreenProps> = ({
     return () => clearInterval(timer);
   }, [visualising]);
 
-  const handleOpenDream = (dream: DreamCardItem) => {
-    playStepChime();
-    setSelectedDream(dream);
-    setVisualising(false);
-    setSecondsLeft(60);
-    setReceivedDone(false);
+  const selectedDream =
+    dreams.find((d) => d.id === selectedDreamId) || null;
+
+  // Handle picking a photo for a dream card -> Resize to max 1200px wide & save in IndexedDB
+  const handleSelectPhotoForDream = async (
+    dreamId: string,
+    file?: File | null
+  ) => {
+    if (!file) return;
+    try {
+      const resizedDataUrl = await resizeImageToMax1200(file);
+      await saveDreamPhotoToDb(dreamId, resizedDataUrl);
+      setPhotoMap((prev) => ({ ...prev, [dreamId]: resizedDataUrl }));
+      onUpdateDream(dreamId, { zoom: 1, offsetX: 0, offsetY: 0 });
+      playStepChime();
+    } catch {
+      // ignore decode error
+    }
   };
 
-  const handleStartVisualise = () => {
+  const handleRemovePhoto = async (dreamId: string) => {
+    await removeDreamPhotoFromDb(dreamId);
+    setPhotoMap((prev) => {
+      const next = { ...prev };
+      delete next[dreamId];
+      return next;
+    });
+    onUpdateDream(dreamId, { zoom: 1, offsetX: 0, offsetY: 0 });
     playStepChime();
-    setReceivedDone(false);
-    setSecondsLeft(60);
-    setVisualising(true);
-    setCalmMusicPlaying(true);
   };
 
-  const handleCloseDream = () => {
-    setCalmMusicPlaying(false);
-    setVisualising(false);
-    setSelectedDream(null);
-    setReceivedDone(false);
+  // Drag to move & Pinch to zoom handlers on photo frames
+  const handlePointerDown = (
+    dream: DreamCardItem,
+    clientX: number,
+    clientY: number
+  ) => {
+    dragStartRef.current = {
+      dreamId: dream.id,
+      startX: clientX,
+      startY: clientY,
+      origX: dream.offsetX || 0,
+      origY: dream.offsetY || 0,
+    };
   };
+
+  const handlePointerMove = (clientX: number, clientY: number) => {
+    if (!dragStartRef.current) return;
+    const { dreamId, startX, startY, origX, origY } = dragStartRef.current;
+    const dx = Math.max(-160, Math.min(160, origX + (clientX - startX)));
+    const dy = Math.max(-160, Math.min(160, origY + (clientY - startY)));
+    onUpdateDream(dreamId, { offsetX: dx, offsetY: dy });
+  };
+
+  const handlePointerUp = () => {
+    dragStartRef.current = null;
+    pinchStartDistRef.current = null;
+  };
+
+  const handleTouchStartPhoto = (
+    dream: DreamCardItem,
+    e: React.TouchEvent
+  ) => {
+    if (e.touches.length === 2) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      pinchStartDistRef.current = {
+        dreamId: dream.id,
+        startDist: Math.max(10, dist),
+        origZoom: dream.zoom || 1,
+      };
+      dragStartRef.current = null;
+    } else if (e.touches.length === 1) {
+      handlePointerDown(dream, e.touches[0].clientX, e.touches[0].clientY);
+    }
+  };
+
+  const handleTouchMovePhoto = (e: React.TouchEvent) => {
+    if (e.touches.length === 2 && pinchStartDistRef.current) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const ratio = dist / pinchStartDistRef.current.startDist;
+      const nextZoom = Math.max(
+        1,
+        Math.min(3, Math.round(pinchStartDistRef.current.origZoom * ratio * 100) / 100)
+      );
+      onUpdateDream(pinchStartDistRef.current.dreamId, { zoom: nextZoom });
+    } else if (e.touches.length === 1 && dragStartRef.current) {
+      handlePointerMove(e.touches[0].clientX, e.touches[0].clientY);
+    }
+  };
+
+  // Enforce maximum 4 words on Dream name input
+  const handleTitleInput = (val: string) => {
+    const words = val.trim().split(/\s+/);
+    if (words.length > 4 && val.endsWith(' ')) return;
+    const capped = words.length > 4 ? words.slice(0, 4).join(' ') : val;
+    setFormTitle(capped);
+  };
+
+  const openAddDreamModal = () => {
+    playStepChime();
+    setEditingDreamId(null);
+    setFormTitle('');
+    setFormCategory(activeFilter === 'All' ? 'Car' : activeFilter);
+    setFormDate('2027-06-30');
+    setFormPhotoPreview('');
+    setFormOpen(true);
+  };
+
+  const openEditDreamModal = (dream: DreamCardItem) => {
+    playStepChime();
+    setEditingDreamId(dream.id);
+    setFormTitle(dream.title);
+    setFormCategory(dream.category);
+    setFormDate(dream.targetDate || '2027-06-30');
+    setFormPhotoPreview(photoMap[dream.id] || '');
+    setFormOpen(true);
+  };
+
+  const handleSaveDreamForm = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanName = formTitle.trim() || 'My New Dream';
+    playCoinSound();
+
+    if (editingDreamId) {
+      onUpdateDream(editingDreamId, {
+        title: cleanName,
+        category: formCategory,
+        targetDate: formDate,
+      });
+      if (formPhotoPreview) {
+        await saveDreamPhotoToDb(editingDreamId, formPhotoPreview);
+        setPhotoMap((prev) => ({
+          ...prev,
+          [editingDreamId]: formPhotoPreview,
+        }));
+      }
+    } else {
+      const newId = `dream_${Date.now()}`;
+      const newDream: DreamCardItem = {
+        id: newId,
+        title: cleanName,
+        category: formCategory,
+        targetDate: formDate,
+        progressPct: 25,
+        achieved: false,
+        zoom: 1,
+        offsetX: 0,
+        offsetY: 0,
+      };
+      if (formPhotoPreview) {
+        await saveDreamPhotoToDb(newId, formPhotoPreview);
+        setPhotoMap((prev) => ({ ...prev, [newId]: formPhotoPreview }));
+      }
+      onAddDream(newDream, formPhotoPreview);
+    }
+    setFormOpen(false);
+  };
+
+  const filteredDreams =
+    activeFilter === 'All'
+      ? dreams
+      : dreams.filter((d) => d.category === activeFilter);
 
   return (
-    <div className="space-y-4 pb-28 pt-2">
-      {/* FULL-SCREEN DREAM MODAL ("Visualise 1 min" -> "I am receiving this") */}
+    <div className="space-y-4 pb-32 pt-1 text-white">
+      {/* ====================================================================
+          FULL-SCREEN DREAM VIEW (Reference Left Phone Style)
+          Big photo frame (drag to move, pinch/slider to zoom), dream name,
+          days left, "Visualise 1 min", "Change photo", "Remove photo", Edit & Delete
+          ==================================================================== */}
       {selectedDream && (
         <div
-          className={`fixed inset-0 z-50 flex flex-col items-center justify-between p-6 text-center ${
-            isNight
-              ? 'bg-gradient-to-b from-[#0F1E32] to-[#1D3B47] text-white'
-              : 'bg-gradient-to-b from-[#FDECE4] via-[#FAF8F5] to-[#E3F6EE] text-[#1F2937]'
-          }`}
+          style={{
+            background:
+              'radial-gradient(circle at 50% 22%, #0E4D64 0%, #051C28 60%, #020A10 100%)',
+          }}
+          className="fixed inset-0 z-50 flex flex-col justify-between px-5 py-6 text-white overflow-y-auto"
         >
-          <div className="pt-2">
-            <span className="text-xs font-extrabold uppercase tracking-wider opacity-65">
-              {selectedDream.daysLeft} days left
-            </span>
-            <h2 className="font-serif-calm text-3xl font-bold mt-1">
-              {selectedDream.title}
-            </h2>
+          {/* Top Bar: Back + Edit + Delete ("Sure?" check) */}
+          <div className="max-w-md w-full mx-auto flex items-center justify-between">
+            <button
+              onClick={() => {
+                setCalmMusicPlaying(false);
+                setVisualising(false);
+                setSelectedDreamId(null);
+                setConfirmDelete(false);
+              }}
+              className="px-4 py-2 rounded-full bg-white/10 border border-white/20 text-xs font-extrabold backdrop-blur-xl"
+            >
+              ← Back
+            </button>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => openEditDreamModal(selectedDream)}
+                className="w-9 h-9 rounded-full bg-white/10 border border-white/20 flex items-center justify-center"
+                title="Edit dream"
+              >
+                <Pencil className="w-4 h-4" />
+              </button>
+
+              {confirmDelete ? (
+                <button
+                  onClick={() => {
+                    const idToRemove = selectedDream.id;
+                    setSelectedDreamId(null);
+                    setConfirmDelete(false);
+                    removeDreamPhotoFromDb(idToRemove);
+                    onDeleteDream(idToRemove);
+                  }}
+                  className="px-3.5 py-1.5 rounded-full bg-rose-500 text-white text-xs font-black shadow-lg"
+                >
+                  Sure?
+                </button>
+              ) : (
+                <button
+                  onClick={() => setConfirmDelete(true)}
+                  className="w-9 h-9 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-rose-300"
+                  title="Delete dream"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </div>
 
-          <div className="my-auto w-full max-w-xs space-y-5">
+          {/* Center Tall Rounded Frosted Photo Frame (Drag to move & Pinch to zoom) */}
+          <div className="max-w-md w-full mx-auto my-3 space-y-3">
             <div
-              className={`w-64 h-64 mx-auto rounded-[36px] overflow-hidden shadow-xl border-4 border-white ${
+              onMouseDown={(e) =>
+                photoMap[selectedDream.id] &&
+                handlePointerDown(selectedDream, e.clientX, e.clientY)
+              }
+              onMouseMove={(e) => handlePointerMove(e.clientX, e.clientY)}
+              onMouseUp={handlePointerUp}
+              onMouseLeave={handlePointerUp}
+              onTouchStart={(e) =>
+                photoMap[selectedDream.id] &&
+                handleTouchStartPhoto(selectedDream, e)
+              }
+              onTouchMove={handleTouchMovePhoto}
+              onTouchEnd={handlePointerUp}
+              className={`relative w-full h-[46vh] min-h-[300px] rounded-[38px] border-2 border-white/25 bg-white/[0.06] backdrop-blur-2xl overflow-hidden shadow-[0_24px_60px_rgba(0,0,0,0.65)] select-none ${
                 visualising ? 'animate-breathe' : ''
               }`}
             >
-              <img
-                src={selectedDream.imageUrl}
-                alt={selectedDream.title}
-                className="w-full h-full object-cover"
-              />
+              {photoMap[selectedDream.id] ? (
+                <>
+                  <img
+                    src={photoMap[selectedDream.id]}
+                    alt={selectedDream.title}
+                    draggable={false}
+                    style={{
+                      transform: `translate3d(${selectedDream.offsetX || 0}px, ${
+                        selectedDream.offsetY || 0
+                      }px, 0) scale(${selectedDream.zoom || 1})`,
+                      transformOrigin: 'center center',
+                    }}
+                    className="w-full h-full object-cover cursor-grab active:cursor-grabbing transition-transform duration-75"
+                  />
+                  <div className="absolute top-3.5 left-3.5 px-3 py-1 rounded-full bg-black/45 backdrop-blur-md border border-white/20 text-[11px] font-bold text-white/90 pointer-events-none">
+                    Drag to move · Pinch to zoom
+                  </div>
+                </>
+              ) : (
+                <button
+                  onClick={() => fullScreenFileRef.current?.click()}
+                  className="w-full h-full flex flex-col items-center justify-center gap-3 text-white/80 hover:text-white transition-colors"
+                >
+                  <div className="w-16 h-16 rounded-full bg-white/10 border border-white/25 flex items-center justify-center text-3xl">
+                    +
+                  </div>
+                  <span className="text-base font-extrabold tracking-wide">
+                    Add photo
+                  </span>
+                </button>
+              )}
             </div>
 
-            {visualising && (
-              <div className="text-3xl font-black text-[#2D8A6E]">
-                0:{String(secondsLeft).padStart(2, '0')}
+            {/* Smooth Zoom Control Bar + Remove Photo when photo exists */}
+            {photoMap[selectedDream.id] && (
+              <div className="flex items-center justify-between gap-3 px-2">
+                <div className="flex items-center gap-2 flex-1">
+                  <ZoomIn className="w-4 h-4 text-cyan-300 shrink-0" />
+                  <input
+                    type="range"
+                    min="1"
+                    max="2.6"
+                    step="0.05"
+                    value={selectedDream.zoom || 1}
+                    onChange={(e) =>
+                      onUpdateDream(selectedDream.id, {
+                        zoom: parseFloat(e.target.value),
+                      })
+                    }
+                    className="w-full accent-cyan-400"
+                  />
+                </div>
+                <button
+                  onClick={() => handleRemovePhoto(selectedDream.id)}
+                  className="px-3 py-1 rounded-full bg-white/10 border border-white/15 text-xs font-bold text-rose-200 hover:bg-rose-500/20"
+                >
+                  Remove photo
+                </button>
               </div>
             )}
 
-            {receivedDone && (
-              <div className="py-3 px-5 rounded-full bg-white text-[#2D8A6E] font-serif-calm text-2xl font-bold shadow-md">
-                I am receiving this
+            {/* Dream Name & Days Left (Reference Left Phone Bottom Typography) */}
+            <div className="pt-1 px-1">
+              <div className="flex items-center gap-2">
+                <span className="px-3 py-0.5 rounded-full bg-cyan-400/15 border border-cyan-300/30 text-cyan-200 text-xs font-extrabold">
+                  {getDaysLeftForDate(selectedDream.targetDate)} days
+                </span>
+                <span className="text-xs font-bold text-white/60">
+                  {selectedDream.category}
+                </span>
               </div>
-            )}
+
+              <h1 className="text-3xl sm:text-4xl font-black tracking-tight mt-2">
+                {selectedDream.title}
+              </h1>
+
+              {visualising && (
+                <div className="mt-2 text-2xl font-black text-cyan-300">
+                  Visualising... 0:{String(secondsLeft).padStart(2, '0')}
+                </div>
+              )}
+
+              {receivedDone && (
+                <div className="mt-2 py-2.5 px-4 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 font-serif-calm text-xl font-bold">
+                  I am receiving this
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className="w-full max-w-xs grid grid-cols-2 gap-3">
+          {/* Hidden File Input for Change Photo */}
+          <input
+            ref={fullScreenFileRef}
+            type="file"
+            accept="image/*"
+            onChange={(e) =>
+              handleSelectPhotoForDream(
+                selectedDream.id,
+                e.target.files?.[0]
+              )
+            }
+            className="hidden"
+          />
+
+          {/* 2 Primary Bottom Buttons: "Visualise 1 min" and "Change photo" */}
+          <div className="max-w-md w-full mx-auto grid grid-cols-2 gap-3 pt-2">
             <button
-              onClick={handleCloseDream}
-              className="py-4 rounded-full bg-white text-[#1F2937] font-extrabold text-sm shadow-sm"
+              onClick={() => fullScreenFileRef.current?.click()}
+              className="py-4 rounded-full bg-white/10 backdrop-blur-xl border border-white/25 text-white font-extrabold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform"
             >
-              Back
+              <Camera className="w-4 h-4" />
+              <span>Change photo</span>
             </button>
 
             <button
-              onClick={handleStartVisualise}
+              onClick={() => {
+                playStepChime();
+                setReceivedDone(false);
+                setSecondsLeft(60);
+                setVisualising(true);
+                setCalmMusicPlaying(true);
+              }}
               disabled={visualising}
-              className="py-4 rounded-full bg-[#2D8A6E] text-white font-extrabold text-sm shadow-md disabled:opacity-60"
+              className="py-4 rounded-full bg-gradient-to-r from-[#0284C7] to-[#38BDF8] text-white font-extrabold text-sm shadow-[0_0_24px_rgba(56,189,248,0.45)] disabled:opacity-60 active:scale-95 transition-transform"
             >
               {visualising ? 'Visualising...' : 'Visualise 1 min'}
             </button>
@@ -451,47 +783,303 @@ export const DreamsScreen: React.FC<DreamsScreenProps> = ({
         </div>
       )}
 
-      {/* TOP OF DREAMS TAB: SAVINGS GOAL BANNER */}
-      <SavingsGoalBanner money={money} isNight={isNight} />
-
-      {/* 6 BIG PICTURE CARDS, 2 PER ROW (Car, Trip, Home, Gold, Film, 6 Branches) */}
-      <div className="grid grid-cols-2 gap-4">
-        {dreams.slice(0, 6).map((dream) => (
-          <button
-            key={dream.id}
-            onClick={() => handleOpenDream(dream)}
-            className={`rounded-[28px] p-3.5 text-left flex flex-col justify-between transition-transform active:scale-95 ${
-              isNight ? 'night-card' : dream.pastelClass
-            }`}
+      {/* ====================================================================
+          ADD OR EDIT A DREAM MODAL
+          Name (max 4 words), Type, Target Date, and Add Photo
+          ==================================================================== */}
+      {formOpen && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xl flex items-center justify-center p-5">
+          <form
+            onSubmit={handleSaveDreamForm}
+            style={{
+              background:
+                'linear-gradient(155deg, rgba(12, 38, 52, 0.96) 0%, rgba(5, 20, 30, 0.98) 100%)',
+            }}
+            className="w-full max-w-sm rounded-[32px] border border-white/25 p-6 space-y-4 text-white shadow-2xl"
           >
-            <div className="w-full h-32 rounded-[22px] overflow-hidden bg-white/80 mb-3 shadow-2xs">
-              <img
-                src={dream.imageUrl}
-                alt={dream.title}
-                className="w-full h-full object-cover"
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-black">
+                {editingDreamId ? 'Edit Dream' : 'Add Dream'}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setFormOpen(false)}
+                className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Name (maximum 4 words) */}
+            <div>
+              <label className="block text-xs font-extrabold uppercase tracking-wider text-white/70 mb-1">
+                Dream Name (max 4 words)
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. My Dream Car"
+                value={formTitle}
+                onChange={(e) => handleTitleInput(e.target.value)}
+                className="w-full px-4 py-3 rounded-2xl bg-white/10 border border-white/20 text-white font-extrabold focus:outline-none"
               />
             </div>
 
-            <div className="px-1">
-              <div className="font-serif-calm text-xl font-bold leading-tight">
-                {dream.title}
-              </div>
-              <div className="text-xs font-bold opacity-65 mt-0.5">
-                {dream.daysLeft} days left
+            {/* Pick a Type */}
+            <div>
+              <label className="block text-xs font-extrabold uppercase tracking-wider text-white/70 mb-1">
+                Type
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                {DREAM_CATEGORIES.map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setFormCategory(cat)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-extrabold transition-all ${
+                      formCategory === cat
+                        ? 'bg-white text-[#041822]'
+                        : 'bg-white/10 border border-white/15 text-white/80'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
               </div>
             </div>
-          </button>
-        ))}
+
+            {/* Pick a Target Date */}
+            <div>
+              <label className="block text-xs font-extrabold uppercase tracking-wider text-white/70 mb-1">
+                Target Date
+              </label>
+              <input
+                type="date"
+                value={formDate}
+                onChange={(e) => setFormDate(e.target.value)}
+                className="w-full px-4 py-3 rounded-2xl bg-white/10 border border-white/20 text-white font-extrabold focus:outline-none"
+              />
+            </div>
+
+            {/* Add Photo in Form */}
+            <div>
+              <input
+                ref={modalFileRef}
+                type="file"
+                accept="image/*"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const resized = await resizeImageToMax1200(file);
+                  setFormPhotoPreview(resized);
+                }}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => modalFileRef.current?.click()}
+                className="w-full py-3 rounded-2xl bg-white/10 border border-dashed border-white/30 text-xs font-extrabold flex items-center justify-center gap-2"
+              >
+                <Camera className="w-4 h-4" />
+                <span>
+                  {formPhotoPreview ? 'Photo Selected ✓ (Change)' : '+ Add Photo'}
+                </span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setFormOpen(false)}
+                className="py-3.5 rounded-full bg-white/10 text-white font-extrabold text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="py-3.5 rounded-full bg-gradient-to-r from-[#0284C7] to-[#38BDF8] text-white font-extrabold text-sm shadow-lg"
+              >
+                Save
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* 1. SAVINGS GOAL BANNER AT THE TOP */}
+      <SavingsGoalBanner money={money} darkGlass={true} />
+
+      {/* 2. ROW OF SMALL ROUND CHIPS TO FILTER: "All", "Car", "Trip", "Home", "Gold", "Film", "Business" */}
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+        {FILTER_CHIPS.map((chip) => {
+          const active = activeFilter === chip;
+          return (
+            <button
+              key={chip}
+              onClick={() => {
+                playStepChime();
+                setActiveFilter(chip);
+              }}
+              className={`px-4 py-2 rounded-full text-xs font-extrabold shrink-0 transition-all ${
+                active
+                  ? 'bg-white text-[#041822] shadow-[0_4px_16px_rgba(255,255,255,0.28)]'
+                  : 'bg-white/[0.07] border border-white/18 text-white/80 hover:bg-white/12'
+              }`}
+            >
+              {chip}
+            </button>
+          );
+        })}
       </div>
+
+      {/* 3. VERTICAL LIST OF BIG PHOTO CARDS, ONE PER ROW, FULL WIDTH */}
+      <div className="space-y-4">
+        {filteredDreams.map((dream) => {
+          const photoUrl = photoMap[dream.id];
+          const daysLeft = getDaysLeftForDate(dream.targetDate);
+          const pct = dream.achieved ? 100 : dream.progressPct || 35;
+
+          return (
+            <div
+              key={dream.id}
+              onClick={() => {
+                if (photoUrl) {
+                  playStepChime();
+                  setSelectedDreamId(dream.id);
+                } else {
+                  cardFileInputRefs.current[dream.id]?.click();
+                }
+              }}
+              className={`relative w-full h-56 sm:h-64 rounded-[32px] overflow-hidden cursor-pointer select-none transition-all duration-300 border ${
+                dream.achieved
+                  ? 'border-amber-400 shadow-[0_0_28px_rgba(251,191,36,0.35)]'
+                  : 'border-white/22 shadow-[0_18px_40px_-10px_rgba(0,0,0,0.6)]'
+              }`}
+              style={{
+                background:
+                  'linear-gradient(145deg, rgba(255, 255, 255, 0.11) 0%, rgba(14, 58, 78, 0.35) 100%)',
+                backdropFilter: 'blur(20px)',
+              }}
+            >
+              {/* Hidden file input for this card */}
+              <input
+                ref={(el) => {
+                  cardFileInputRefs.current[dream.id] = el;
+                }}
+                type="file"
+                accept="image/*"
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) =>
+                  handleSelectPhotoForDream(dream.id, e.target.files?.[0])
+                }
+                className="hidden"
+              />
+
+              {/* Photo or Empty Frosted Glass Frame ("+" and "Add photo") */}
+              {photoUrl ? (
+                <img
+                  src={photoUrl}
+                  alt={dream.title}
+                  draggable={false}
+                  style={{
+                    transform: `translate3d(${dream.offsetX || 0}px, ${
+                      dream.offsetY || 0
+                    }px, 0) scale(${dream.zoom || 1})`,
+                    transformOrigin: 'center center',
+                  }}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-white/80 hover:text-white transition-colors">
+                  <div className="w-14 h-14 rounded-full bg-white/10 border border-white/25 flex items-center justify-center text-3xl font-light shadow-inner">
+                    +
+                  </div>
+                  <span className="text-sm font-extrabold tracking-wide">
+                    Add photo
+                  </span>
+                </div>
+              )}
+
+              {/* Top-Left: Frosted Glass Tag with Days Left (example: "225 days") */}
+              <div className="absolute top-4 left-4 px-3.5 py-1.5 rounded-full bg-black/35 backdrop-blur-xl border border-white/22 text-xs font-extrabold text-white tracking-wide">
+                {daysLeft} days
+              </div>
+
+              {/* Top-Right: Open Full-Screen Details button even when empty */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  playStepChime();
+                  setSelectedDreamId(dream.id);
+                }}
+                className="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/35 backdrop-blur-xl border border-white/22 flex items-center justify-center text-white/85 hover:text-white"
+                title="Open Dream"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+
+              {/* Bottom Bar: Glass Name Bar at Bottom-Left + Round Glass "Achieved" Button at Bottom-Right */}
+              <div className="absolute bottom-3.5 left-3.5 right-3.5 flex items-center justify-between gap-2">
+                {/* Frosted Glass Name Pill Bar (Reference Right Phone Style) */}
+                <div className="flex-1 px-4 py-2.5 rounded-full bg-white/15 backdrop-blur-xl border border-white/25 text-sm font-extrabold text-white truncate shadow-sm">
+                  {dream.title}
+                </div>
+
+                {/* Small Round Glass Button at Bottom-Right: Tap to mark "Achieved" (glows gold + confetti) */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const nextAchieved = !dream.achieved;
+                    onUpdateDream(dream.id, {
+                      achieved: nextAchieved,
+                      progressPct: nextAchieved ? 100 : 50,
+                    });
+                    if (nextAchieved) {
+                      playCoinSound();
+                      onTriggerConfetti();
+                    }
+                  }}
+                  title={dream.achieved ? 'Achieved!' : 'Mark Achieved'}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all ${
+                    dream.achieved
+                      ? 'bg-amber-400 text-slate-950 border-2 border-amber-200 shadow-[0_0_20px_rgba(251,191,36,0.9)] scale-105'
+                      : 'bg-white/18 backdrop-blur-xl border border-white/30 text-white hover:bg-white/25'
+                  }`}
+                >
+                  <Check className="w-4 h-4 stroke-[3]" />
+                </button>
+              </div>
+
+              {/* Thin Progress Line Along the Bottom Edge of the Photo */}
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/15">
+                <div
+                  style={{ width: `${pct}%` }}
+                  className={`h-full transition-all duration-500 ${
+                    dream.achieved
+                      ? 'bg-amber-400'
+                      : 'bg-gradient-to-r from-cyan-400 to-emerald-400'
+                  }`}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* FLOATING ROUND "+" BUTTON AT THE BOTTOM-RIGHT TO ADD A NEW DREAM */}
+      <button
+        onClick={openAddDreamModal}
+        aria-label="Add new dream"
+        className="fixed bottom-24 right-5 z-30 w-14 h-14 rounded-full bg-gradient-to-tr from-[#0284C7] to-[#38BDF8] text-white border border-white/35 shadow-[0_0_25px_rgba(56,189,248,0.6)] flex items-center justify-center active:scale-90 transition-transform"
+      >
+        <Plus className="w-7 h-7 stroke-[2.5]" />
+      </button>
     </div>
   );
 };
 
 // ============================================================================
 // TAB 3: MONEY TAB
-// 3 big cards only: "Loans left", "Saved", "Profit".
-// One button: "Add Daily" (opens number boxes: Sales, Costs, Loan paid, Saved, + "Orders today").
-// One short money quote from a famous advisor at the bottom (max 12 words).
 // ============================================================================
 interface MoneyScreenProps {
   money: MoneyStateData;
@@ -539,7 +1127,6 @@ export const MoneyScreen: React.FC<MoneyScreenProps> = ({
 
   return (
     <div className="space-y-4 pb-28 pt-2">
-      {/* ADD DAILY / WEEK SHEET: Sales, Costs, Loan paid, Saved + "Orders today" */}
       {showAddSheet && (
         <div
           className={`fixed inset-0 z-50 flex items-center justify-center p-5 ${
@@ -611,7 +1198,6 @@ export const MoneyScreen: React.FC<MoneyScreenProps> = ({
                 />
               </div>
 
-              {/* One more small box on the Add Daily sheet: "Orders today" */}
               <div className="col-span-2 rounded-2xl p-3.5 pastel-teal flex items-center justify-between gap-3">
                 <label className="text-xs font-extrabold opacity-75">
                   Orders today
@@ -645,7 +1231,6 @@ export const MoneyScreen: React.FC<MoneyScreenProps> = ({
         </div>
       )}
 
-      {/* TALL ROUNDED PILL BARS FOR THE WEEK (Image 1 Growth Style) */}
       <div
         className={`rounded-[28px] p-5 ${
           isNight ? 'night-card' : 'pastel-white'
@@ -672,7 +1257,6 @@ export const MoneyScreen: React.FC<MoneyScreenProps> = ({
         </div>
       </div>
 
-      {/* 3 BIG CARDS ONLY: "Loans left", "Saved", "Profit" */}
       <div className="space-y-3.5">
         <div
           className={`rounded-[28px] p-5 flex items-center justify-between ${
@@ -719,7 +1303,6 @@ export const MoneyScreen: React.FC<MoneyScreenProps> = ({
         </div>
       </div>
 
-      {/* ONE BUTTON: "Add Daily" */}
       <button
         onClick={() => setShowAddSheet(true)}
         className="w-full py-4 rounded-full bg-[#2D8A6E] text-white font-extrabold text-base shadow-sm active:scale-[0.99] transition-transform"
@@ -727,7 +1310,6 @@ export const MoneyScreen: React.FC<MoneyScreenProps> = ({
         Add Daily
       </button>
 
-      {/* ONE SHORT MONEY QUOTE FROM A FAMOUS ADVISOR AT THE BOTTOM */}
       <p className="text-center text-xs font-bold opacity-65 pt-1">
         “{advisorQuote.quote}” — {advisorQuote.author}
       </p>

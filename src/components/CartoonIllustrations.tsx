@@ -1,5 +1,8 @@
 import React from 'react';
-import { TimeThemeMode } from '../data/ruchitvaData';
+import {
+  TimeThemeMode,
+  NEON_MANIFESTATION_COLOURS,
+} from '../data/ruchitvaData';
 
 // 1. IMAGE 2 STYLE: NATURE LANDSCAPE HEADER (Mountains, Lake, Trees, Sun/Moon)
 // Sky changes with time: Morning = light blue & peach, Evening = soft orange & pink, Night = dark green-navy with moon
@@ -534,35 +537,24 @@ export const ManifestationBanner: React.FC<ManifestationBannerProps> = ({
   }, [currentIndex, todayDayNumber]);
 
   const activeCard = cards[currentIndex % total] || cards[0];
-  const isNight = theme === 'night';
+  const neonColor =
+    NEON_MANIFESTATION_COLOURS[
+      currentIndex % NEON_MANIFESTATION_COLOURS.length
+    ];
 
   const handleBannerTap = () => {
     onPlayPop();
     setCurrentIndex((prev) => (prev + 1) % total);
   };
 
-  // Banner colours match the time theme (light in morning, warm in evening, navy and gold at night)
-  const bannerStyle: React.CSSProperties =
-    theme === 'night'
-      ? {
-          background:
-            'linear-gradient(135deg, #102038 0%, #173152 52%, #1E293B 100%)',
-          border: '1px solid rgba(251, 211, 141, 0.28)',
-          boxShadow: '0 14px 32px -10px rgba(4, 9, 20, 0.6)',
-        }
-      : theme === 'evening'
-      ? {
-          background:
-            'linear-gradient(135deg, #FFE8D6 0%, #FDE2E4 52%, #FAD2E1 100%)',
-          border: '1px solid rgba(251, 146, 60, 0.22)',
-          boxShadow: '0 12px 28px -8px rgba(234, 138, 118, 0.25)',
-        }
-      : {
-          background:
-            'linear-gradient(135deg, #FFFDF9 0%, #FDECE4 50%, #E6F4FE 100%)',
-          border: '1px solid rgba(255, 255, 255, 0.9)',
-          boxShadow: '0 12px 28px -8px rgba(148, 163, 184, 0.2)',
-        };
+  // Dark glass background (deep navy / black) so the card's own neon colour glows brightly
+  const bannerStyle: React.CSSProperties = {
+    background:
+      'linear-gradient(145deg, rgba(6, 11, 23, 0.96) 0%, rgba(11, 20, 38, 0.94) 100%)',
+    border: `1.5px solid ${neonColor}`,
+    boxShadow: `0 12px 32px -8px rgba(0, 0, 0, 0.65), 0 0 22px -4px ${neonColor}55, inset 0 0 18px ${neonColor}1F`,
+    backdropFilter: 'blur(18px)',
+  };
 
   return (
     <div
@@ -576,18 +568,24 @@ export const ManifestationBanner: React.FC<ManifestationBannerProps> = ({
         }
       }}
       style={bannerStyle}
-      className="w-full rounded-[30px] px-6 py-6 text-center cursor-pointer select-none transition-transform active:scale-[0.99] overflow-hidden"
+      className="w-full rounded-[30px] px-6 py-6 text-center cursor-pointer select-none transition-all duration-500 active:scale-[0.99] overflow-hidden"
     >
       {/* Animated Inner Content (flips/slides smoothly on every tap) */}
       <div
         key={currentIndex}
         className="animate-manifest-card flex flex-col items-center justify-center space-y-3"
       >
-        {/* Small Illustration: Sun, Star, or Lotus */}
-        <div className="w-11 h-11 rounded-full bg-white/75 dark:bg-white/10 flex items-center justify-center shadow-2xs">
+        {/* Small Illustration: Sun, Star, or Lotus glowing in the card's neon colour */}
+        <div
+          style={{
+            borderColor: `${neonColor}66`,
+            boxShadow: `0 0 14px ${neonColor}44`,
+          }}
+          className="w-11 h-11 rounded-full bg-white/5 border flex items-center justify-center transition-all duration-500"
+        >
           {activeCard.symbol === 'sun' && (
             <svg width="26" height="26" viewBox="0 0 32 32">
-              <circle cx="16" cy="16" r="7" fill="#F59E0B" />
+              <circle cx="16" cy="16" r="7" fill={neonColor} />
               {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => (
                 <line
                   key={deg}
@@ -595,7 +593,7 @@ export const ManifestationBanner: React.FC<ManifestationBannerProps> = ({
                   y1="3"
                   x2="16"
                   y2="6.5"
-                  stroke="#F59E0B"
+                  stroke={neonColor}
                   strokeWidth="2.4"
                   strokeLinecap="round"
                   transform={`rotate(${deg} 16 16)`}
@@ -608,7 +606,7 @@ export const ManifestationBanner: React.FC<ManifestationBannerProps> = ({
             <svg width="26" height="26" viewBox="0 0 32 32">
               <path
                 d="M16 3 L19.2 11.6 L28 12.4 L21.2 18.2 L23.3 27 L16 22.2 L8.7 27 L10.8 18.2 L4 12.4 L12.8 11.6 Z"
-                fill="#FBBF24"
+                fill={neonColor}
               />
             </svg>
           )}
@@ -617,53 +615,63 @@ export const ManifestationBanner: React.FC<ManifestationBannerProps> = ({
             <svg width="28" height="26" viewBox="0 0 36 32">
               <path
                 d="M18 6 C22 12 22 20 18 25 C14 20 14 12 18 6 Z"
-                fill="#F472B6"
+                fill={neonColor}
               />
               <path
                 d="M18 25 C11 23 7 16 9 10 C13 13 16 18 18 25 Z"
-                fill="#F9A8D4"
+                fill={neonColor}
+                opacity="0.82"
               />
               <path
                 d="M18 25 C25 23 29 16 27 10 C23 13 20 18 18 25 Z"
-                fill="#F9A8D4"
+                fill={neonColor}
+                opacity="0.82"
               />
               <path
                 d="M18 25 C9 26 4 21 4 16 C9 17 14 20 18 25 Z"
-                fill="#FBCFE8"
+                fill={neonColor}
+                opacity="0.65"
               />
               <path
                 d="M18 25 C27 26 32 21 32 16 C27 17 22 20 18 25 Z"
-                fill="#FBCFE8"
+                fill={neonColor}
+                opacity="0.65"
               />
             </svg>
           )}
         </div>
 
-        {/* ONE Manifestation Line in BIG Bold Text (at least 28px, max 10 words, centre aligned) */}
+        {/* ONE Manifestation Line in BIG Bold Neon Glowing Text (at least 28px, max 10 words, centre aligned) */}
         <p
-          className={`text-[28px] sm:text-[31px] font-black leading-[1.22] tracking-tight max-w-sm mx-auto ${
-            isNight ? 'text-[#FEF3C7]' : 'text-[#1F2937]'
-          }`}
+          style={{
+            color: neonColor,
+            textShadow: `0 0 14px ${neonColor}88, 0 0 28px ${neonColor}33`,
+          }}
+          className="text-[28px] sm:text-[31px] font-black leading-[1.22] tracking-tight max-w-sm mx-auto transition-colors duration-500"
         >
           “{activeCard.line}”
         </p>
       </div>
 
-      {/* Small Dots at the Bottom Showing Which Card It Is (no other buttons on the banner) */}
+      {/* Small Dots at the Bottom Using That Card's Neon Colour */}
       <div className="flex items-center justify-center gap-1.5 mt-5 flex-wrap max-w-xs mx-auto">
         {cards.map((c, idx) => {
           const isActive = idx === currentIndex;
           return (
             <span
               key={c.id}
-              className={`rounded-full transition-all duration-300 ${
+              style={
                 isActive
-                  ? isNight
-                    ? 'w-4 h-1.5 bg-[#FCD34D]'
-                    : 'w-4 h-1.5 bg-[#2D8A6E]'
-                  : isNight
-                  ? 'w-1.5 h-1.5 bg-amber-200/30'
-                  : 'w-1.5 h-1.5 bg-slate-400/40'
+                  ? {
+                      backgroundColor: neonColor,
+                      boxShadow: `0 0 8px ${neonColor}`,
+                    }
+                  : {
+                      backgroundColor: `${neonColor}38`,
+                    }
+              }
+              className={`rounded-full transition-all duration-300 ${
+                isActive ? 'w-4 h-1.5' : 'w-1.5 h-1.5'
               }`}
             />
           );
